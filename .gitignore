@@ -10,13 +10,22 @@ venv/
 .env
 .env.*
 !.env.example
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
 
 # Local data and runtime artifacts
 data/raw/
 data/processed/
+*.sqlite3
 *.log
 .pytest_cache/
 .ruff_cache/
+.cache/
+.hf_cache/
 
 # IDE and OS files
 .DS_Store
