@@ -51,6 +51,8 @@ docker compose up -d postgres redis
 
 See [production interview questions and answers](docs/interview-questions.md) for the reasoning behind the retrieval, security, agent, MCP, and operations design.
 
+See [observability.md](docs/observability.md) for the Langfuse tracing setup. Langfuse is optional and content capture is disabled by default; PostgreSQL remains the durable audit source for security and business events.
+
 The first versioned retrieval cases live in [retrieval_cases.jsonl](data/evaluation/retrieval_cases.jsonl), with metric calculations in `agentic_ai.evaluation`. Evaluation cases are treated as code: changes should be reviewed and run in CI.
 
 The API can be started with:

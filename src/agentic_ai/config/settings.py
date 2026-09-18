@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3.5:9b"
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str = "http://localhost:3000"
+    langfuse_release: str = "local"
+    langfuse_capture_content: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

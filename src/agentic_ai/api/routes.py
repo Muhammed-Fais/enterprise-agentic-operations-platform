@@ -16,6 +16,7 @@ from .dependencies import (
     get_answer_model,
     get_embedder,
     get_mcp_status_client,
+    get_observability,
     get_tool_authorization,
 )
 from .schemas import (
@@ -107,17 +108,29 @@ async def run_agent(
     embedder: Embedder = Depends(get_embedder),
     answer_model=Depends(get_answer_model),
     mcp_status_client=Depends(get_mcp_status_client),
+    observability=Depends(get_observability),
 ) -> AgentResponse:
     graph = build_agent_graph(
         PgVectorRetriever(session, embedder),
         status_tool=mcp_status_client.get_incident_status,
         answer_model=answer_model.answer,
     )
-    result = await graph.ainvoke(
-        {
-            "query": mask_pii(request.query).text,
-            "access": AccessContext(auth.tenant_id, auth.subject_id, auth.roles),
-        }
+    masked_query = mask_pii(request.query).text
+    result = await observability.observe(
+        name="agent.run",
+        as_type="agent",
+        input_data={"query": masked_query},
+        metadata={"tenant_id": auth.tenant_id, "subject_id": auth.subject_id},
+        operation=lambda: graph.ainvoke(
+            {
+                "query": masked_query,
+                "access": AccessContext(auth.tenant_id, auth.subject_id, auth.roles),
+            }
+        ),
+        output_builder=lambda output: {
+            "citation_count": len(output.get("citations", [])),
+            "has_live_status": bool(output.get("live_status")),
+        },
     )
     await record_event(
         session,

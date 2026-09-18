@@ -9,6 +9,7 @@ from agentic_ai.mcp import (
     ToolCapability,
     ToolPolicy,
 )
+from agentic_ai.observability import LangfuseObservability
 
 
 @lru_cache
@@ -20,6 +21,11 @@ def get_embedder() -> LocalSentenceTransformerEmbedder:
 def get_answer_model() -> OllamaChatModel:
     settings = get_settings()
     return OllamaChatModel(settings.ollama_base_url, settings.ollama_model)
+
+
+@lru_cache
+def get_observability() -> LangfuseObservability:
+    return LangfuseObservability(get_settings())
 
 
 @lru_cache

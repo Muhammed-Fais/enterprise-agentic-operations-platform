@@ -98,6 +98,14 @@ Audit events are written to the durable PostgreSQL `audit_events` table with ten
 
 Application logs support debugging and performance analysis and may be sampled or shipped to a log platform. Audit events document security- and business-significant actions such as retrieval completion, approval requests, and tool execution. Audit records require stronger tenant scoping, retention, access control, and integrity guarantees; Redis or ordinary process logs are not substitutes for them.
 
+### Why use Langfuse as well as PostgreSQL audit events?
+
+They solve different problems. PostgreSQL audit events are the durable, tenant-scoped record of security and business actions. Langfuse provides nested agent and LLM observations, latency, model metadata, prompt/version tracking, tool spans, and evaluation workflows. Langfuse is optional and content capture is disabled by default to reduce data-leakage risk. The application must not treat a tracing outage as authorization success or allow observability tooling to replace the audit trail.
+
+### How do you keep Langfuse from leaking sensitive data?
+
+Requests are PII-masked before the agent runs, and the tracer does not send input/output content unless `LANGFUSE_CAPTURE_CONTENT=true` is explicitly configured. The default trace contains safe metadata such as event type, tenant-scoped identifiers, result counts, and status. A production deployment still needs retention policies, access controls, tenant strategy, and a review of whether self-hosting or an approved cloud region is required.
+
 ### How do you control cost?
 
 Cache embeddings and safe retrieval results, route simple classification to smaller local models, cap context and tool iterations, enforce per-workflow budgets, and record token usage at every model call. Cost limits should fail safely rather than silently skipping security checks.
@@ -260,6 +268,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - API approval and execution endpoints for a write-capable MCP tool
 - Durable structured audit events for ingestion, retrieval, agent runs, approvals, and actions
 - Server-generated request correlation IDs returned through `X-Request-ID`
+- Optional Langfuse v4 agent tracing with content capture disabled by default
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
