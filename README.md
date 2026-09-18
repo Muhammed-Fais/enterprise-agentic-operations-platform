@@ -36,3 +36,9 @@ For an interview-ready visual deck, open [the presentation source](docs/enterpri
 ## Database foundation
 
 The initial schema is in [001_initial.sql](infra/migrations/001_initial.sql). It creates tenant-aware documents, vectorized chunks, ingestion jobs, and audit events. The ingestion package currently provides deterministic paragraph-aware chunking so ingestion behavior can be evaluated and versioned.
+
+The retrieval implementation combines pgvector cosine similarity with PostgreSQL full-text search. Once PostgreSQL is available, apply the schema with:
+
+```bash
+.venv/bin/python -m agentic_ai.db.migrate
+```

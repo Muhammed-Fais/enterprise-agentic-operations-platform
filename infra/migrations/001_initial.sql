@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     content TEXT NOT NULL,
     content_hash TEXT NOT NULL,
     embedding vector(384),
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (document_id, chunk_index)
@@ -31,6 +32,7 @@ CREATE INDEX IF NOT EXISTS documents_subjects_idx ON documents USING GIN (allowe
 CREATE INDEX IF NOT EXISTS chunks_document_idx ON document_chunks (document_id);
 CREATE INDEX IF NOT EXISTS chunks_embedding_idx ON document_chunks
     USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS chunks_search_vector_idx ON document_chunks USING GIN (search_vector);
 
 CREATE TABLE IF NOT EXISTS ingestion_jobs (
     id UUID PRIMARY KEY,
