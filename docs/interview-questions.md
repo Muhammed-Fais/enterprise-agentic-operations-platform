@@ -110,6 +110,10 @@ The root `agent.run` observation contains safe request metadata and the final ou
 
 Requests are PII-masked before the agent runs, and the tracer does not send input/output content unless `LANGFUSE_CAPTURE_CONTENT=true` is explicitly configured. The default trace contains safe metadata such as event type, tenant-scoped identifiers, result counts, and status. A production deployment still needs retention policies, access controls, tenant strategy, and a review of whether self-hosting or an approved cloud region is required.
 
+### How do you run Langfuse locally without paying for a hosted service?
+
+We run the official self-hosted Langfuse Docker Compose deployment as a separate stack. It includes its own PostgreSQL, Redis, ClickHouse, MinIO, web, and worker services, with persistent Docker volumes and host ports chosen to avoid the platform stack. The application points to `http://localhost:3000` and uses project API keys from the local Langfuse project. This is appropriate for local development; production requires backups, secret management, access control, and a highly available deployment strategy.
+
 ### How do you control cost?
 
 Cache embeddings and safe retrieval results, route simple classification to smaller local models, cap context and tool iterations, enforce per-workflow budgets, and record token usage at every model call. Cost limits should fail safely rather than silently skipping security checks.

@@ -24,3 +24,15 @@ The application currently creates an `agent.run` observation. The trace records 
 For local experiments, use the official Langfuse Docker Compose deployment and open its UI on port 3000. The official deployment is intentionally kept separate from this application’s PostgreSQL and Redis stack because Langfuse has its own storage, migrations, and operational lifecycle. For production, use the official Kubernetes or managed deployment guidance with persistent storage, backups, secrets, and access control.
 
 The application uses the same SDK contract for Langfuse Cloud and self-hosted Langfuse; only the endpoint and credentials change.
+
+## This local workspace
+
+The official Langfuse repository is cloned as a sibling workspace at `../langfuse-local` and is intentionally not vendored into this application repository. Start or stop it with:
+
+```bash
+cd ../langfuse-local
+docker compose up -d
+docker compose ps
+```
+
+The dashboard is available at `http://localhost:3000`. The local stack uses host ports `55432` for its PostgreSQL, `56379` for its Redis, `8123`/`9000` for ClickHouse, and `9090`/`9091` for MinIO so it does not collide with the platform’s PostgreSQL and Redis containers.
