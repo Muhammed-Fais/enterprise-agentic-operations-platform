@@ -11,7 +11,9 @@ def _database_url(url: str) -> str:
 
 
 async def apply_migrations() -> None:
-    migration_dir = Path(__file__).resolve().parents[3] / "infra" / "migrations"
+    workspace_migrations = Path.cwd() / "infra" / "migrations"
+    source_migrations = Path(__file__).resolve().parents[3] / "infra" / "migrations"
+    migration_dir = workspace_migrations if workspace_migrations.exists() else source_migrations
     migrations = sorted(migration_dir.glob("*.sql"))
     if not migrations:
         raise RuntimeError(f"no migrations found in {migration_dir}")
