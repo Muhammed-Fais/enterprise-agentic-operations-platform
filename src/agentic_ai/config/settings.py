@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     langfuse_base_url: str = "http://localhost:3000"
     langfuse_release: str = "local"
     langfuse_capture_content: bool = False
+    rate_limit_requests_per_minute: int = 60
+    agent_budget_units_per_day: int = 100
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

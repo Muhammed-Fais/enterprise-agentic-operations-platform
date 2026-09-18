@@ -118,6 +118,10 @@ We run the official self-hosted Langfuse Docker Compose deployment as a separate
 
 Cache embeddings and safe retrieval results, route simple classification to smaller local models, cap context and tool iterations, enforce per-workflow budgets, and record token usage at every model call. Cost limits should fail safely rather than silently skipping security checks.
 
+### How do you enforce rate limits and workflow budgets?
+
+Redis provides atomic counters through Lua scripts. Each protected request is keyed by tenant, subject, route, and a UTC minute window; exceeding the configured limit returns `429` with `Retry-After`. Agent executions also reserve a daily tenant-scoped workflow unit before starting. The control plane fails closed with `503` if Redis is unavailable, because bypassing abuse and budget controls is safer than pretending the request was governed. In production, the limits are configuration or policy data and the Redis deployment needs persistence, monitoring, and high availability.
+
 ### How do you scale ingestion?
 
 Move ingestion to an asynchronous worker queue, make jobs idempotent using content hashes, batch embedding requests locally, upsert chunks transactionally, and expose job status. A failed document should be retried independently without duplicating successful documents.
@@ -278,6 +282,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Server-generated request correlation IDs returned through `X-Request-ID`
 - Optional Langfuse v4 agent tracing with content capture disabled by default
 - Explicit degraded agent responses when the local model times out or is unavailable
+- Redis-backed per-tenant/user rate limiting and daily agent workflow budgets
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
@@ -297,4 +302,4 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing beyond Langfuse, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing beyond Langfuse, asynchronous workers, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.

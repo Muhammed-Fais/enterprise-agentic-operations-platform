@@ -44,6 +44,11 @@ class AgentResponse(BaseModel):
     degraded: bool = False
 
 
+class ControlErrorResponse(BaseModel):
+    detail: str
+    retry_after_seconds: int
+
+
 class ApprovalRequest(BaseModel):
     tool_name: str = Field(min_length=1)
     arguments: dict[str, object]

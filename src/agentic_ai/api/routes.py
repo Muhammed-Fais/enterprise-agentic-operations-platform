@@ -4,6 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from agentic_ai.agents import build_agent_graph
 from agentic_ai.audit import record_event
 from agentic_ai.auth import AuthContext, get_auth_context
+from agentic_ai.controls import (
+    BudgetExceeded,
+    RateLimitExceeded,
+    RedisControls,
+    RedisControlsUnavailable,
+)
 from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
 from agentic_ai.guardrails import mask_pii
@@ -17,6 +23,7 @@ from .dependencies import (
     get_embedder,
     get_mcp_status_client,
     get_observability,
+    get_redis_controls,
     get_tool_authorization,
 )
 from .schemas import (
@@ -36,6 +43,39 @@ from .schemas import (
 router = APIRouter(prefix="/v1")
 
 
+async def enforce_rate_limit(
+    request: Request,
+    auth: AuthContext = Depends(get_auth_context),
+    controls: RedisControls = Depends(get_redis_controls),
+) -> None:
+    try:
+        await controls.enforce_rate_limit(auth.tenant_id, auth.subject_id, request.url.path)
+    except RateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"message": str(exc), "retry_after_seconds": exc.retry_after},
+            headers={"Retry-After": str(exc.retry_after)},
+        ) from exc
+    except RedisControlsUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+
+async def enforce_agent_budget(
+    auth: AuthContext = Depends(get_auth_context),
+    controls: RedisControls = Depends(get_redis_controls),
+) -> None:
+    try:
+        await controls.reserve_agent_budget(auth.tenant_id)
+    except BudgetExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"message": str(exc), "retry_after_seconds": exc.retry_after},
+            headers={"Retry-After": str(exc.retry_after)},
+        ) from exc
+    except RedisControlsUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+
+
 @router.post("/documents", response_model=DocumentIngestResponse, status_code=201)
 async def ingest_document(
     request: DocumentIngestRequest,
@@ -43,6 +83,7 @@ async def ingest_document(
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
+    _: None = Depends(enforce_rate_limit),
 ) -> DocumentIngestResponse:
     masked = mask_pii(request.content)
     allowed_subjects = request.allowed_subjects or [auth.subject_id]
@@ -78,6 +119,7 @@ async def search_documents(
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
     observability=Depends(get_observability),
+    _: None = Depends(enforce_rate_limit),
 ) -> SearchResponse:
     results = await PgVectorRetriever(session, embedder, observability).search(
         mask_pii(request.query).text,
@@ -110,6 +152,8 @@ async def run_agent(
     answer_model=Depends(get_answer_model),
     mcp_status_client=Depends(get_mcp_status_client),
     observability=Depends(get_observability),
+    _: None = Depends(enforce_rate_limit),
+    __: None = Depends(enforce_agent_budget),
 ) -> AgentResponse:
     graph = build_agent_graph(
         PgVectorRetriever(session, embedder, observability),
@@ -156,6 +200,7 @@ async def request_action_approval(
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
+    _: None = Depends(enforce_rate_limit),
 ) -> ApprovalResponse:
     try:
         token = await authorization.request_approval(session, auth, request.tool_name, request.arguments)
@@ -179,6 +224,7 @@ async def execute_action(
     session: AsyncSession = Depends(get_session),
     authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
     mcp_client: MCPStatusClient = Depends(get_mcp_status_client),
+    _: None = Depends(enforce_rate_limit),
 ) -> ActionExecuteResponse:
     if request.tool_name != "create_incident_ticket":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="unsupported action")
