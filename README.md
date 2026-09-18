@@ -32,3 +32,7 @@ The project is intentionally organized around replaceable interfaces. Retrieval,
 See [docs/architecture.md](docs/architecture.md) for the platform diagrams, request lifecycle, trust boundaries, and evaluation loop. The diagrams use Mermaid and render directly on GitHub.
 
 For an interview-ready visual deck, open [the presentation source](docs/enterprise-agentic-operations-platform.html) or download the generated PDF from the repository releases/artifacts when available.
+
+## Database foundation
+
+The initial schema is in [001_initial.sql](infra/migrations/001_initial.sql). It creates tenant-aware documents, vectorized chunks, ingestion jobs, and audit events. The ingestion package currently provides deterministic paragraph-aware chunking so ingestion behavior can be evaluated and versioned.
