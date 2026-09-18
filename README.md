@@ -30,3 +30,5 @@ The project is intentionally organized around replaceable interfaces. Retrieval,
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for the platform diagrams, request lifecycle, trust boundaries, and evaluation loop. The diagrams use Mermaid and render directly on GitHub.
+
+For an interview-ready visual deck, open [the presentation source](docs/enterprise-agentic-operations-platform.html) or download the generated PDF from the repository releases/artifacts when available.

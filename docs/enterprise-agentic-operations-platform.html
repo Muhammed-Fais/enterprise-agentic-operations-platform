@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Enterprise Agentic Operations Platform</title>
+  <style>
+    :root { --ink:#172033; --muted:#64748b; --blue:#2563eb; --cyan:#06b6d4; --violet:#7c3aed; --green:#059669; --orange:#ea580c; --paper:#f8fafc; --line:#dbe4f0; }
+    * { box-sizing:border-box; }
+    @page { size: 13.333in 7.5in; margin:0; }
+    body { margin:0; background:#dbe4f0; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .slide { width:13.333in; height:7.5in; padding:.62in .75in; background:var(--paper); position:relative; overflow:hidden; page-break-after:always; }
+    .slide:last-child { page-break-after:auto; }
+    .slide:after { content:"ENTERPRISE AGENTIC OPERATIONS PLATFORM"; position:absolute; bottom:.22in; left:.75in; font-size:9px; letter-spacing:1.4px; color:#94a3b8; }
+    .number { position:absolute; right:.75in; bottom:.2in; color:#94a3b8; font-size:10px; }
+    .eyebrow { color:var(--blue); font-weight:800; text-transform:uppercase; letter-spacing:2px; font-size:12px; }
+    h1 { font-size:54px; line-height:1.02; letter-spacing:-2px; margin:18px 0 18px; max-width:850px; }
+    h2 { font-size:31px; letter-spacing:-1px; margin:8px 0 8px; }
+    h3 { margin:0 0 8px; font-size:17px; }
+    p { color:var(--muted); font-size:16px; line-height:1.5; }
+    .subtitle { font-size:22px; max-width:700px; }
+    .accent { color:var(--blue); }
+    .hero { background: radial-gradient(circle at 88% 18%, #dbeafe 0 12%, transparent 32%), linear-gradient(135deg,#f8fafc,#eef5ff); }
+    .hero .mark { position:absolute; right:1.1in; top:1.0in; width:3.6in; height:3.6in; border-radius:36px; background:linear-gradient(145deg,#1d4ed8,#06b6d4); transform:rotate(8deg); box-shadow:0 22px 50px #2563eb44; }
+    .hero .mark:before { content:"✦"; position:absolute; color:white; font-size:130px; left:95px; top:80px; transform:rotate(-8deg); }
+    .hero .mark:after { content:"RAG  •  MCP  •  EVALS"; position:absolute; bottom:35px; left:44px; color:#dbeafe; font-size:12px; letter-spacing:2px; transform:rotate(-8deg); }
+    .tag { display:inline-block; border:1px solid #bfdbfe; color:#1d4ed8; background:#eff6ff; border-radius:999px; padding:9px 14px; margin:8px 5px 0 0; font-size:12px; font-weight:700; }
+    .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:24px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:24px; }
+    .card { background:white; border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 7px 18px #1720330a; }
+    .card p { font-size:14px; margin:6px 0 0; }
+    .icon { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:#dbeafe; color:#1d4ed8; font-weight:900; margin-bottom:14px; }
+    .flow { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:30px; }
+    .node { min-width:128px; padding:17px 12px; border:1px solid #bfdbfe; border-radius:13px; text-align:center; font-size:13px; font-weight:800; background:white; box-shadow:0 8px 18px #1720330b; }
+    .node.blue { background:#eff6ff; border-color:#93c5fd; } .node.violet { background:#f5f3ff; border-color:#c4b5fd; } .node.green { background:#ecfdf5; border-color:#86efac; } .node.orange { background:#fff7ed; border-color:#fdba74; }
+    .arrow { color:#94a3b8; font-size:24px; }
+    .small { font-size:12px; color:var(--muted); }
+    .metric { font-size:34px; font-weight:850; color:var(--blue); }
+    .metric-label { font-size:12px; color:var(--muted); margin-top:3px; }
+    .timeline { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:28px; }
+    .step { border-top:4px solid var(--blue); padding:16px 14px 0 0; margin-right:15px; }
+    .step:nth-child(2){border-color:var(--violet)} .step:nth-child(3){border-color:var(--orange)} .step:nth-child(4){border-color:var(--green)}
+    .step b { display:block; margin-bottom:8px; }
+    ul { padding-left:19px; color:var(--muted); line-height:1.75; font-size:15px; }
+    .quote { margin-top:30px; border-left:5px solid var(--blue); padding:13px 18px; background:white; color:#334155; font-size:20px; line-height:1.4; border-radius:0 12px 12px 0; }
+    .diagram { background:white; border:1px solid var(--line); border-radius:18px; padding:16px; margin-top:18px; }
+    svg { width:100%; height:auto; display:block; }
+    .footer-note { position:absolute; bottom:.55in; right:.75in; color:#64748b; font-size:11px; }
+  </style>
+</head>
+<body>
+  <section class="slide hero">
+    <div class="eyebrow">Portfolio architecture · 2026</div>
+    <h1>Enterprise Agentic<br><span class="accent">Operations Platform</span></h1>
+    <p class="subtitle">A secure, evaluable multi-agent system for enterprise knowledge, investigation, and controlled action.</p>
+    <div><span class="tag">Hybrid RAG</span><span class="tag">MCP tools</span><span class="tag">Human approval</span><span class="tag">Security gates</span></div>
+    <div class="mark"></div><div class="footer-note">Architecture presentation</div><div class="number">01</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">The problem</div><h2>Enterprise AI needs more than a chat interface</h2>
+    <p>Useful automation must be grounded in authorized data, safe around sensitive information, observable in production, and accountable when it takes action.</p>
+    <div class="grid3">
+      <div class="card"><div class="icon">01</div><h3>Grounded knowledge</h3><p>Hybrid retrieval, reranking, citations, and abstention when evidence is insufficient.</p></div>
+      <div class="card"><div class="icon">02</div><h3>Controlled actions</h3><p>MCP tools with typed contracts, least privilege, retries, and human approval for writes.</p></div>
+      <div class="card"><div class="icon">03</div><h3>Operational trust</h3><p>PII masking, tenant isolation, audit trails, evaluations, cost budgets, and tracing.</p></div>
+    </div>
+    <div class="quote">“An incident-response workflow that can investigate, explain, and act—without silently crossing a security boundary.”</div><div class="number">02</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Platform architecture</div><h2>One platform, replaceable capabilities</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 1120 340" xmlns="http://www.w3.org/2000/svg" aria-label="Platform architecture">
+        <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/></marker></defs>
+        <g font-family="Arial, sans-serif" font-size="13" text-anchor="middle">
+          <rect x="20" y="135" width="120" height="64" rx="12" fill="#eff6ff" stroke="#93c5fd"/><text x="80" y="162" font-weight="700">User / UI</text><text x="80" y="183" fill="#64748b">request</text>
+          <rect x="175" y="135" width="135" height="64" rx="12" fill="#eff6ff" stroke="#93c5fd"/><text x="242" y="162" font-weight="700">API Gateway</text><text x="242" y="183" fill="#64748b">auth + limits</text>
+          <rect x="345" y="135" width="145" height="64" rx="12" fill="#f5f3ff" stroke="#c4b5fd"/><text x="417" y="162" font-weight="700">Agent Graph</text><text x="417" y="183" fill="#64748b">plan + route</text>
+          <rect x="525" y="60" width="145" height="64" rx="12" fill="#ecfdf5" stroke="#86efac"/><text x="597" y="87" font-weight="700">RAG Service</text><text x="597" y="108" fill="#64748b">retrieve + cite</text>
+          <rect x="525" y="210" width="145" height="64" rx="12" fill="#fff7ed" stroke="#fdba74"/><text x="597" y="237" font-weight="700">MCP Gateway</text><text x="597" y="258" fill="#64748b">tools + policy</text>
+          <rect x="710" y="60" width="165" height="64" rx="12" fill="#f8fafc" stroke="#cbd5e1"/><text x="792" y="87" font-weight="700">Postgres + pgvector</text><text x="792" y="108" fill="#64748b">data + ACLs</text>
+          <rect x="710" y="210" width="165" height="64" rx="12" fill="#f8fafc" stroke="#cbd5e1"/><text x="792" y="237" font-weight="700">MCP servers</text><text x="792" y="258" fill="#64748b">read / write tools</text>
+          <rect x="915" y="135" width="170" height="64" rx="12" fill="#eff6ff" stroke="#93c5fd"/><text x="1000" y="162" font-weight="700">Guardrails + Audit</text><text x="1000" y="183" fill="#64748b">safe response</text>
+          <path d="M140 167 H175 M310 167 H345 M490 150 L525 100 M490 184 L525 235 M670 92 H710 M670 242 H710 M875 92 L915 150 M875 242 L915 184" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+        </g>
+      </svg>
+    </div><div class="number">03</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Flagship workflow</div><h2>Incident response from question to approved action</h2>
+    <div class="timeline">
+      <div class="step"><b>1 · Secure intake</b><p class="small">Authenticate user, resolve tenant and roles, scan input for injection and PII.</p></div>
+      <div class="step"><b>2 · Investigate</b><p class="small">Retrieve authorized evidence, rerank sources, and call read-only status tools.</p></div>
+      <div class="step"><b>3 · Explain</b><p class="small">Return a concise diagnosis with citations, confidence, provenance, and next steps.</p></div>
+      <div class="step"><b>4 · Act safely</b><p class="small">Request approval, validate scope, create a ticket, and record the complete audit event.</p></div>
+    </div>
+    <div class="flow"><div class="node blue">User question</div><div class="arrow">→</div><div class="node violet">Agent plan</div><div class="arrow">→</div><div class="node green">Evidence + tools</div><div class="arrow">→</div><div class="node orange">Approval gate</div><div class="arrow">→</div><div class="node green">Ticket action</div></div>
+    <div class="grid3" style="margin-top:36px"><div class="card"><div class="metric">0</div><div class="metric-label">unauthorized sources in context</div></div><div class="card"><div class="metric">100%</div><div class="metric-label">write actions require approval</div></div><div class="card"><div class="metric">1</div><div class="metric-label">auditable workflow trace</div></div></div><div class="number">04</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Trust and safety</div><h2>Security is a system boundary, not a prompt</h2>
+    <div class="grid2">
+      <div class="card"><h3>Before the model</h3><ul><li>Authentication and tenant isolation</li><li>Role-aware retrieval filters</li><li>PII detection and masking</li><li>Prompt-injection scanning</li></ul></div>
+      <div class="card"><h3>Before any tool action</h3><ul><li>Strict typed schemas</li><li>Allowlisted MCP tools</li><li>Read versus write permissions</li><li>Human approval for side effects</li></ul></div>
+      <div class="card"><h3>After model output</h3><ul><li>Citation and claim validation</li><li>Secret and PII scanning</li><li>Safe refusal and abstention</li><li>Response schema enforcement</li></ul></div>
+      <div class="card"><h3>Always observable</h3><ul><li>Prompt and retrieval versions</li><li>Tool arguments and results</li><li>Latency, tokens, and cost</li><li>Immutable audit events</li></ul></div>
+    </div><div class="quote">Least privilege applies to data, tools, model context, and the final action.</div><div class="number">05</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Evaluation and scale</div><h2>Every improvement is measurable</h2>
+    <div class="grid3">
+      <div class="card"><div class="icon">R</div><h3>Retrieval quality</h3><p>Recall@K, MRR, NDCG, ACL correctness, citation completeness, and latency.</p></div>
+      <div class="card"><div class="icon">A</div><h3>Agent quality</h3><p>Groundedness, answer correctness, tool selection, recovery, and appropriate abstention.</p></div>
+      <div class="card"><div class="icon">S</div><h3>Security quality</h3><p>Injection resistance, PII leakage, cross-tenant access, and unauthorized-action tests.</p></div>
+    </div>
+    <div class="grid2" style="margin-top:34px"><div class="card"><h3>Scale strategy</h3><p>Async ingestion and workflows, Redis queues, caching, model routing, rate limits, and per-workflow budgets.</p></div><div class="card"><h3>Provider flexibility</h3><p>Model, embedding, retrieval, MCP, and observability providers sit behind typed interfaces and can be benchmarked independently.</p></div></div>
+    <div class="quote">The platform earns trust through evidence, constrained actions, and regression-tested behavior.</div><div class="number">06</div>
+  </section>
+</body>
+</html>
