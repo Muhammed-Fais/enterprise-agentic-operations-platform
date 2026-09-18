@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from agentic_ai.agents import build_agent_graph
+from agentic_ai.audit import record_event
 from agentic_ai.auth import AuthContext, get_auth_context
 from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
@@ -37,6 +38,7 @@ router = APIRouter(prefix="/v1")
 @router.post("/documents", response_model=DocumentIngestResponse, status_code=201)
 async def ingest_document(
     request: DocumentIngestRequest,
+    http_request: Request,
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
@@ -54,6 +56,13 @@ async def ingest_document(
         allowed_subjects=allowed_subjects,
         metadata={**request.metadata, "pii_masked": str(bool(masked.counts)).lower()},
     )
+    await record_event(
+        session,
+        auth,
+        http_request.state.request_id,
+        "document.ingested",
+        {"document_id": str(document_id), "chunks_created": len(chunk_text(masked.text))},
+    )
     return DocumentIngestResponse(
         document_id=str(document_id),
         chunks_created=len(chunk_text(masked.text)),
@@ -63,6 +72,7 @@ async def ingest_document(
 @router.post("/search", response_model=SearchResponse)
 async def search_documents(
     request: SearchRequest,
+    http_request: Request,
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
@@ -76,6 +86,13 @@ async def search_documents(
         ),
         limit=request.limit,
     )
+    await record_event(
+        session,
+        auth,
+        http_request.state.request_id,
+        "retrieval.completed",
+        {"result_count": len(results), "limit": request.limit},
+    )
     return SearchResponse(
         results=[SearchResultResponse(**result.__dict__) for result in results]
     )
@@ -84,6 +101,7 @@ async def search_documents(
 @router.post("/agent/run", response_model=AgentResponse)
 async def run_agent(
     request: AgentRequest,
+    http_request: Request,
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
@@ -101,6 +119,13 @@ async def run_agent(
             "access": AccessContext(auth.tenant_id, auth.subject_id, auth.roles),
         }
     )
+    await record_event(
+        session,
+        auth,
+        http_request.state.request_id,
+        "agent.completed",
+        {"citation_count": len(result.get("citations", [])), "live_status": bool(result.get("live_status"))},
+    )
     return AgentResponse(
         answer=result["answer"],
         citations=result.get("citations", []),
@@ -111,12 +136,20 @@ async def run_agent(
 @router.post("/actions/request-approval", response_model=ApprovalResponse)
 async def request_action_approval(
     request: ApprovalRequest,
+    http_request: Request,
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
 ) -> ApprovalResponse:
     try:
         token = await authorization.request_approval(session, auth, request.tool_name, request.arguments)
+        await record_event(
+            session,
+            auth,
+            http_request.state.request_id,
+            "action.approval_requested",
+            {"tool_name": request.tool_name, "expires_in_seconds": 300},
+        )
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     return ApprovalResponse(approval_token=token)
@@ -125,6 +158,7 @@ async def request_action_approval(
 @router.post("/actions/execute", response_model=ActionExecuteResponse)
 async def execute_action(
     request: ActionExecuteRequest,
+    http_request: Request,
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
@@ -164,6 +198,20 @@ async def execute_action(
         )
     except Exception as exc:
         await authorization.fail(session, auth, request.idempotency_key, str(exc))
+        await record_event(
+            session,
+            auth,
+            http_request.state.request_id,
+            "action.failed",
+            {"tool_name": request.tool_name, "idempotency_key": request.idempotency_key},
+        )
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="action execution failed") from exc
     await authorization.complete(session, auth, request.idempotency_key, result)
+    await record_event(
+        session,
+        auth,
+        http_request.state.request_id,
+        "action.completed",
+        {"tool_name": request.tool_name, "idempotency_key": request.idempotency_key},
+    )
     return ActionExecuteResponse(result=result)

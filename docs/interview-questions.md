@@ -90,6 +90,14 @@ Retrieved documents are treated as untrusted evidence, not instructions. They ar
 
 Track retrieval latency, embedding latency, model latency, tool latency, queue depth, error rate, timeout rate, cache hit rate, token usage, cost per workflow, citation failures, abstention rate, and unauthorized-access denials.
 
+### How do you implement audit logging?
+
+Audit events are written to the durable PostgreSQL `audit_events` table with tenant, subject, event type, request ID, structured payload, and timestamp. The API generates a correlation ID for every request and returns it as `X-Request-ID`, allowing an operator to connect API, workflow, and tool records. Payloads are allowlisted: we record counts, identifiers, tool names, and outcomes, but never raw document content, queries, approval tokens, or action arguments. In a larger deployment, these records would be exported to an immutable retention system or SIEM while PostgreSQL remains the transactional source.
+
+### What is the difference between application logs and audit events?
+
+Application logs support debugging and performance analysis and may be sampled or shipped to a log platform. Audit events document security- and business-significant actions such as retrieval completion, approval requests, and tool execution. Audit records require stronger tenant scoping, retention, access control, and integrity guarantees; Redis or ordinary process logs are not substitutes for them.
+
 ### How do you control cost?
 
 Cache embeddings and safe retrieval results, route simple classification to smaller local models, cap context and tool iterations, enforce per-workflow budgets, and record token usage at every model call. Cost limits should fail safely rather than silently skipping security checks.
@@ -246,6 +254,8 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Local Ollama-backed answer generation through `POST /v1/agent/run`
 - MCP client-to-server stdio transport for live incident status
 - API approval and execution endpoints for a write-capable MCP tool
+- Durable structured audit events for ingestion, retrieval, agent runs, approvals, and actions
+- Server-generated request correlation IDs returned through `X-Request-ID`
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
@@ -265,4 +275,4 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
