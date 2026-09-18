@@ -131,6 +131,7 @@ async def run_agent(
         output_builder=lambda output: {
             "citation_count": len(output.get("citations", [])),
             "has_live_status": bool(output.get("live_status")),
+            "degraded": bool(output.get("degraded")),
         },
     )
     await record_event(
@@ -144,6 +145,7 @@ async def run_agent(
         answer=result["answer"],
         citations=result.get("citations", []),
         live_status=result.get("live_status"),
+        degraded=bool(result.get("degraded")),
     )
 
 

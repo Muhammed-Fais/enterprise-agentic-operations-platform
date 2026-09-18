@@ -42,3 +42,22 @@ async def test_graph_abstains_without_evidence() -> None:
     )
 
     assert "sufficient authorized evidence" in result["answer"]
+
+
+@pytest.mark.asyncio
+async def test_graph_returns_degraded_evidence_when_model_fails() -> None:
+    class EvidenceRetriever:
+        async def search(self, query, access, *, limit=5):
+            return [SearchResult("chunk-1", "doc-1", "Use the incident runbook.", 0.9, "runbook.md", {})]
+
+    async def failing_model(system_prompt: str, user_prompt: str) -> str:
+        raise TimeoutError("model timeout")
+
+    graph = build_agent_graph(EvidenceRetriever(), answer_model=failing_model)
+    result = await graph.ainvoke(
+        {"query": "How do I respond?", "access": AuthContext("tenant-a", "user-1", ())}
+    )
+
+    assert result["degraded"] is True
+    assert "model was unavailable" in result["answer"]
+    assert result["citations"] == ["runbook.md"]

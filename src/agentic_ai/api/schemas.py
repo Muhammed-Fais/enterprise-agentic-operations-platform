@@ -41,6 +41,7 @@ class AgentResponse(BaseModel):
     answer: str
     citations: list[str]
     live_status: dict[str, str] | None = None
+    degraded: bool = False
 
 
 class ApprovalRequest(BaseModel):

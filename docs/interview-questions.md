@@ -204,7 +204,7 @@ The graph only calls the model after retrieval returns authorized evidence. The 
 
 ### How do you handle local-model unavailability?
 
-The API should distinguish model unavailability from retrieval failure. A production implementation can return a structured degraded response, retry within a deadline, or use a configured fallback model. It must not silently return a fabricated answer or hide that generation failed.
+The API distinguishes model unavailability from retrieval failure. The bounded graph catches expected model timeout/HTTP/validation failures and returns the authorized evidence with `degraded=true` and an explicit explanation. This is preferable to a fabricated answer or an opaque 500. Production can add a smaller fallback model or bounded retry, but it must preserve the deadline and clearly expose the degraded state.
 
 ### How do you handle failed or slow tools?
 
@@ -277,6 +277,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Durable structured audit events for ingestion, retrieval, agent runs, approvals, and actions
 - Server-generated request correlation IDs returned through `X-Request-ID`
 - Optional Langfuse v4 agent tracing with content capture disabled by default
+- Explicit degraded agent responses when the local model times out or is unavailable
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
@@ -296,4 +297,4 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing beyond Langfuse, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
