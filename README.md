@@ -1,4 +1,4 @@
-# Agentic AI Operations Platform
+# NexusOps Platform
 
 An extensible enterprise multi-agent platform for incident response and support operations.
 
