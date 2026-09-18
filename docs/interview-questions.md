@@ -118,6 +118,18 @@ Every trace should record the schema version, prompt version, embedding model an
 
 Tools are classified as read-only, write-with-approval, or administrative. Every call validates the user, tenant, role, tool allowlist, input schema, resource ownership, approval state, and idempotency key. The model can request an action, but application code—not the model—decides whether it is authorized.
 
+### Why use MCP instead of calling tools directly from the agent?
+
+MCP gives tools a standard interface that can be discovered and consumed by different agent hosts. The official Python SDK derives tool schemas from type hints and supports standard transports. Our application still keeps authorization outside the protocol layer because protocol metadata and client hints are not security controls.
+
+### How does the approval gate work?
+
+For a write tool, the application hashes the exact arguments, binds an approval token to the tenant, subject, tool name, and arguments, and expires the token after a short period. The write call is allowed only when the approval matches. An idempotency key prevents duplicate side effects.
+
+### What happens if the model tampers with an approved tool call?
+
+The approval is rejected because the arguments hash no longer matches. The model cannot convert approval for one action into permission for another action. The system logs the mismatch as a security event.
+
 ### How do you handle failed or slow tools?
 
 Each tool has a timeout, bounded retry policy, circuit breaker, correlation ID, and structured error response. Retries are limited to transient failures and destructive operations are not blindly retried. If a tool remains unavailable, the agent returns a partial but honest answer and never claims success without a verified result.
@@ -183,6 +195,8 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Typed FastAPI document-ingestion and retrieval endpoints
 - JWT-derived tenant and subject context
 - Initial PII masking guardrail before embeddings and storage
+- MCP tool server with read-only and draft tools
+- Application-side role checks and human approval authorization
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 

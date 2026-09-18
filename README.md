@@ -60,3 +60,11 @@ The API can be started with:
 ```
 
 It currently exposes `POST /v1/documents` and `POST /v1/search`. Identity fields are explicit for local development; production authentication and RBAC are next.
+
+The MCP demo server can be run with:
+
+```bash
+.venv/bin/python -m agentic_ai.mcp.server
+```
+
+Tool authorization is enforced in the application layer, including role checks, approval-token binding, expiry, and idempotency. MCP tool annotations are treated as metadata, not as a security boundary.

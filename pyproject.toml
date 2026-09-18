@@ -18,6 +18,7 @@ dependencies = [
   "redis>=5,<6",
   "pypdf>=5,<6",
   "sentence-transformers>=5,<6",
+  "mcp>=2,<3",
 ]
 
 [project.optional-dependencies]
