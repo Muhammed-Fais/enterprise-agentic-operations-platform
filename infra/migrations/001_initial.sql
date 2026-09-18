@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     content_hash TEXT NOT NULL,
-    embedding vector(1536),
+    embedding vector(384),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (document_id, chunk_index)

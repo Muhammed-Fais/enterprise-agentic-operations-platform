@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://agentic:agentic@localhost:5432/agentic"
     redis_url: str = "redis://localhost:6379/0"
     log_level: str = "INFO"
-    embedding_dimensions: int = 1536
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimensions: int = 384
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

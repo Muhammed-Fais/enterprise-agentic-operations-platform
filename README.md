@@ -25,7 +25,7 @@ pip install -e '.[dev]'
 pytest
 ```
 
-The project is intentionally organized around replaceable interfaces. Retrieval, model providers, MCP clients, and observability implementations can evolve without coupling the core workflow to one vendor.
+The project is intentionally organized around replaceable interfaces. The default embedding path is local and free: `sentence-transformers/all-MiniLM-L6-v2`, with model files cached locally after the first download. Retrieval, model providers, MCP clients, and observability implementations remain behind typed boundaries so they can be benchmarked independently.
 
 ## Architecture
 
