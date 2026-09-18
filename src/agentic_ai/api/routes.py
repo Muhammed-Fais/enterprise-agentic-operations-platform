@@ -77,8 +77,9 @@ async def search_documents(
     auth: AuthContext = Depends(get_auth_context),
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
+    observability=Depends(get_observability),
 ) -> SearchResponse:
-    results = await PgVectorRetriever(session, embedder).search(
+    results = await PgVectorRetriever(session, embedder, observability).search(
         mask_pii(request.query).text,
         AccessContext(
             tenant_id=auth.tenant_id,
@@ -111,7 +112,7 @@ async def run_agent(
     observability=Depends(get_observability),
 ) -> AgentResponse:
     graph = build_agent_graph(
-        PgVectorRetriever(session, embedder),
+        PgVectorRetriever(session, embedder, observability),
         status_tool=mcp_status_client.get_incident_status,
         answer_model=answer_model.answer,
     )

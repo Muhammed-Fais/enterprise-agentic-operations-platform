@@ -102,6 +102,10 @@ Application logs support debugging and performance analysis and may be sampled o
 
 They solve different problems. PostgreSQL audit events are the durable, tenant-scoped record of security and business actions. Langfuse provides nested agent and LLM observations, latency, model metadata, prompt/version tracking, tool spans, and evaluation workflows. Langfuse is optional and content capture is disabled by default to reduce data-leakage risk. The application must not treat a tracing outage as authorization success or allow observability tooling to replace the audit trail.
 
+### What does one agent trace contain?
+
+The root `agent.run` observation contains safe request metadata and the final outcome. Nested observations identify `retrieval.hybrid_search`, `llm.ollama_chat`, and MCP tools such as `mcp.get_incident_status` or `mcp.create_incident_ticket`. Each child records timing and a bounded result summary, which lets us attribute latency and failures to retrieval, generation, or tools without putting raw evidence or action arguments into telemetry by default.
+
 ### How do you keep Langfuse from leaking sensitive data?
 
 Requests are PII-masked before the agent runs, and the tracer does not send input/output content unless `LANGFUSE_CAPTURE_CONTENT=true` is explicitly configured. The default trace contains safe metadata such as event type, tenant-scoped identifiers, result counts, and status. A production deployment still needs retention policies, access controls, tenant strategy, and a review of whether self-hosting or an approved cloud region is required.

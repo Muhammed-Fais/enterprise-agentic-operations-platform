@@ -20,7 +20,11 @@ def get_embedder() -> LocalSentenceTransformerEmbedder:
 @lru_cache
 def get_answer_model() -> OllamaChatModel:
     settings = get_settings()
-    return OllamaChatModel(settings.ollama_base_url, settings.ollama_model)
+    return OllamaChatModel(
+        settings.ollama_base_url,
+        settings.ollama_model,
+        observability=get_observability(),
+    )
 
 
 @lru_cache
@@ -30,7 +34,7 @@ def get_observability() -> LangfuseObservability:
 
 @lru_cache
 def get_mcp_status_client() -> MCPStatusClient:
-    return MCPStatusClient()
+    return MCPStatusClient(observability=get_observability())
 
 
 @lru_cache

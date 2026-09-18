@@ -1,6 +1,8 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from agentic_ai.observability import LangfuseObservability
+
 from .contracts import AccessContext, SearchResult
 
 
@@ -11,15 +13,17 @@ class PgVectorRetriever:
     does not depend on a particular model provider.
     """
 
-    def __init__(self, session: AsyncSession, embedder):
+    def __init__(self, session: AsyncSession, embedder, observability: LangfuseObservability | None = None):
         self.session = session
         self.embedder = embedder
+        self.observability = observability
 
     async def search(
         self, query: str, access: AccessContext, *, limit: int = 8
     ) -> list[SearchResult]:
-        vector = await self.embedder.embed(query)
-        statement = text(
+        async def execute_search() -> list[SearchResult]:
+            vector = await self.embedder.embed(query)
+            statement = text(
             """
             WITH vector_results AS (
                 SELECT c.id AS chunk_id, c.document_id, c.content, d.source, c.metadata,
@@ -51,25 +55,39 @@ class PgVectorRetriever:
             LIMIT :limit
             """
         )
-        rows = await self.session.execute(
-            statement,
-            {
-                "vector": str(vector),
-                "tenant_id": access.tenant_id,
-                "subject_id": access.subject_id,
-                "query": query,
-                "candidate_limit": max(limit * 4, 20),
-                "limit": limit,
+            rows = await self.session.execute(
+                statement,
+                {
+                    "vector": str(vector),
+                    "tenant_id": access.tenant_id,
+                    "subject_id": access.subject_id,
+                    "query": query,
+                    "candidate_limit": max(limit * 4, 20),
+                    "limit": limit,
+                },
+            )
+            return [
+                SearchResult(
+                    chunk_id=str(row.chunk_id),
+                    document_id=str(row.document_id),
+                    text=row.content,
+                    score=float(row.score),
+                    source=row.source,
+                    metadata=row.metadata or {},
+                )
+                for row in rows
+            ]
+
+        if not self.observability:
+            return await execute_search()
+        return await self.observability.observe(
+            name="retrieval.hybrid_search",
+            as_type="retriever",
+            operation=execute_search,
+            input_data={"query": query},
+            metadata={"tenant_id": access.tenant_id, "limit": limit},
+            output_builder=lambda results: {
+                "result_count": len(results),
+                "top_score": results[0].score if results else None,
             },
         )
-        return [
-            SearchResult(
-                chunk_id=str(row.chunk_id),
-                document_id=str(row.document_id),
-                text=row.content,
-                score=float(row.score),
-                source=row.source,
-                metadata=row.metadata or {},
-            )
-            for row in rows
-        ]
