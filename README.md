@@ -1,4 +1,4 @@
-# NexusOps Platform
+# Enterprise Agentic Operations Platform
 
 An extensible enterprise multi-agent platform for incident response and support operations.
 
