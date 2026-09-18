@@ -130,6 +130,18 @@ For a write tool, the application hashes the exact arguments, binds an approval 
 
 The approval is rejected because the arguments hash no longer matches. The model cannot convert approval for one action into permission for another action. The system logs the mismatch as a security event.
 
+### Why use a bounded LangGraph workflow?
+
+The graph makes the workflow explicit: retrieve evidence, decide whether a live investigation is needed, call a read-only status tool, and compose a cited response. Explicit transitions make retries, limits, traces, and tests easier than an unconstrained loop. The current graph has no hidden tool loop and abstains when retrieval returns no evidence.
+
+### How do you decide whether to call a live tool?
+
+The workflow classifies the request before calling tools. Terms such as `current`, `live`, `ongoing`, and `status` route the request to a read-only status check. In production, this classifier would be evaluated on labeled requests and combined with authorization policy; keyword routing is only the initial deterministic implementation.
+
+### How does the graph handle no-answer cases?
+
+The retrieval node returns an empty evidence list when nothing authorized is relevant. The composition node produces an explicit insufficient-evidence response with no citations rather than fabricating an answer. This behavior is tested as a first-class path.
+
 ### How do you handle failed or slow tools?
 
 Each tool has a timeout, bounded retry policy, circuit breaker, correlation ID, and structured error response. Retries are limited to transient failures and destructive operations are not blindly retried. If a tool remains unavailable, the agent returns a partial but honest answer and never claims success without a verified result.
@@ -197,6 +209,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Initial PII masking guardrail before embeddings and storage
 - MCP tool server with read-only and draft tools
 - Application-side role checks and human approval authorization
+- Bounded LangGraph retrieval and investigation workflow
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
