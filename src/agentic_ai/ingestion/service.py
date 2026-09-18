@@ -63,6 +63,13 @@ class IngestionService:
         )
         document_id = result.scalar_one()
 
+        # Re-ingestion is a replacement operation. Removing old chunks prevents
+        # stale content from remaining searchable when a source document shrinks.
+        await self.session.execute(
+            text("DELETE FROM document_chunks WHERE document_id = :document_id"),
+            {"document_id": document_id},
+        )
+
         for chunk in chunks:
             embedding = await self.embedder.embed(chunk.content)
             await self.session.execute(
