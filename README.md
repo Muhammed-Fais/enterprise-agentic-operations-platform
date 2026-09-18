@@ -26,3 +26,7 @@ pytest
 ```
 
 The project is intentionally organized around replaceable interfaces. Retrieval, model providers, MCP clients, and observability implementations can evolve without coupling the core workflow to one vendor.
+
+## Architecture
+
+See [docs/architecture.md](docs/architecture.md) for the platform diagrams, request lifecycle, trust boundaries, and evaluation loop. The diagrams use Mermaid and render directly on GitHub.
