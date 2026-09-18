@@ -52,3 +52,11 @@ docker compose up -d postgres redis
 See [production interview questions and answers](docs/interview-questions.md) for the reasoning behind the retrieval, security, agent, MCP, and operations design.
 
 The first versioned retrieval cases live in [retrieval_cases.jsonl](data/evaluation/retrieval_cases.jsonl), with metric calculations in `agentic_ai.evaluation`. Evaluation cases are treated as code: changes should be reviewed and run in CI.
+
+The API can be started with:
+
+```bash
+.venv/bin/uvicorn agentic_ai.api.app:app --reload
+```
+
+It currently exposes `POST /v1/documents` and `POST /v1/search`. Identity fields are explicit for local development; production authentication and RBAC are next.

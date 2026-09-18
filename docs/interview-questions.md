@@ -48,6 +48,18 @@ MCP gives tools a standard boundary with explicit schemas and provenance. The pl
 
 Write tools are not available on the read-only path. Tool arguments are validated against strict schemas, permissions are checked again at execution time, destructive actions require human approval, and every action has an idempotency key and audit event.
 
+### Is Redis a log platform?
+
+No. Redis is an in-memory data store. In this platform it is useful for retrieval caching, asynchronous ingestion queues, rate limiting, short-lived approval state, workflow checkpoints, and distributed locks. Application logs should be emitted as structured events and sent to an observability or log backend. PostgreSQL remains the durable store for documents, audit records, and business data.
+
+### Why not store logs in Redis?
+
+Redis is optimized for fast temporary access, not durable log retention, compliance retention, search, or long-term analysis. Redis can hold short-lived counters or queue messages, but audit events and production logs need durable storage, retention policies, access controls, and backups.
+
+### How should the API be designed?
+
+The API should expose typed request and response contracts, validate tenant and subject context, keep model loading outside request handlers, and return stable identifiers and provenance. The current API slice exposes document ingestion and permission-aware search; authentication and RBAC will replace the client-supplied identity fields before production deployment.
+
 ### How do you handle tool failure?
 
 Use bounded retries only for transient failures, apply timeouts and circuit breakers, preserve the workflow state, and return a partial-but-honest response when the tool remains unavailable. The agent should never claim that a tool succeeded without a verified result.
@@ -152,6 +164,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Versioned retrieval evaluation cases
 - Recall@K, Precision@K, MRR, and forbidden-retrieval metrics
 - Unit tests for evaluation behavior
+- Typed FastAPI document-ingestion and retrieval endpoints
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
