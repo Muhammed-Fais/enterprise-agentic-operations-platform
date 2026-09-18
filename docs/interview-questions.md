@@ -56,6 +56,10 @@ No. Redis is an in-memory data store. In this platform it is useful for retrieva
 
 Redis is optimized for fast temporary access, not durable log retention, compliance retention, search, or long-term analysis. Redis can hold short-lived counters or queue messages, but audit events and production logs need durable storage, retention policies, access controls, and backups.
 
+### How do you protect a public repository?
+
+Secrets are excluded through `.gitignore`, while `.env.example` documents required configuration without real values. The repository also ignores credentials, certificates, local databases, model caches, generated build artifacts, and raw data. Before making the repository public, tracked files should be scanned for secrets and the deployment must use a secret manager rather than committed configuration.
+
 ### How should the API be designed?
 
 The API should expose typed request and response contracts, validate tenant and subject context, keep model loading outside request handlers, and return stable identifiers and provenance. The current API slice exposes document ingestion and permission-aware search; authentication and RBAC will replace the client-supplied identity fields before production deployment.
