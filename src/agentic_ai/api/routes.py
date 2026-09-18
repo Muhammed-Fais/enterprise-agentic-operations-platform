@@ -10,7 +10,7 @@ from agentic_ai.ingestion import IngestionService, LoadedDocument, chunk_text
 from agentic_ai.retrieval.contracts import AccessContext
 from agentic_ai.retrieval.pgvector import PgVectorRetriever
 
-from .dependencies import get_answer_model, get_embedder
+from .dependencies import get_answer_model, get_embedder, get_mcp_status_client
 from .schemas import (
     AgentRequest,
     AgentResponse,
@@ -22,10 +22,6 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/v1")
-
-
-async def _local_status_tool(incident_id: str) -> dict[str, str]:
-    return {"incident_id": incident_id, "status": "investigating", "source": "demo-status-system"}
 
 
 @router.post("/documents", response_model=DocumentIngestResponse, status_code=201)
@@ -82,10 +78,11 @@ async def run_agent(
     session: AsyncSession = Depends(get_session),
     embedder: Embedder = Depends(get_embedder),
     answer_model=Depends(get_answer_model),
+    mcp_status_client=Depends(get_mcp_status_client),
 ) -> AgentResponse:
     graph = build_agent_graph(
         PgVectorRetriever(session, embedder),
-        status_tool=_local_status_tool,
+        status_tool=mcp_status_client.get_incident_status,
         answer_model=answer_model.answer,
     )
     result = await graph.ainvoke(

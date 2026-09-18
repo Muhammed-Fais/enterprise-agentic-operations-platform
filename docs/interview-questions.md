@@ -130,6 +130,14 @@ For a write tool, the application hashes the exact arguments, binds an approval 
 
 The approval is rejected because the arguments hash no longer matches. The model cannot convert approval for one action into permission for another action. The system logs the mismatch as a security event.
 
+### How does the agent communicate with an MCP server?
+
+The application uses the official MCP client over a typed transport. The local development path launches the MCP server as a subprocess over stdio; a deployed version can use Streamable HTTP. The client validates the tool result and converts it into the graph's typed state. Transport failures are separate from business-tool failures and should be traced independently.
+
+### Why use stdio locally and Streamable HTTP in production?
+
+Stdio is isolated and simple for a local tool process. Streamable HTTP is the deployable transport for a separately scaled MCP service, with normal authentication, timeouts, load balancing, and service observability. The graph depends on a tool adapter, so changing the transport does not change workflow logic.
+
 ### Why use a bounded LangGraph workflow?
 
 The graph makes the workflow explicit: retrieve evidence, decide whether a live investigation is needed, call a read-only status tool, and compose a cited response. Explicit transitions make retries, limits, traces, and tests easier than an unconstrained loop. The current graph has no hidden tool loop and abstains when retrieval returns no evidence.
@@ -223,6 +231,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Application-side role checks and human approval authorization
 - Bounded LangGraph retrieval and investigation workflow
 - Local Ollama-backed answer generation through `POST /v1/agent/run`
+- MCP client-to-server stdio transport for live incident status
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
