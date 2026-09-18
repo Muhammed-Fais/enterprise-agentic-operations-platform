@@ -74,6 +74,83 @@ Move ingestion to an asynchronous worker queue, make jobs idempotent using conte
 
 Use ordered, versioned migrations, backward-compatible changes first, data backfills as resumable jobs, and indexes built with production-safe strategies. Embedding-dimension changes require a new index or table and a controlled re-index rather than an in-place mismatch.
 
+### How do you handle stale documents and re-ingestion?
+
+Documents are identified by `tenant_id` and `external_id`, while a content hash detects changes. Re-ingestion upserts the document, removes its previous chunks, re-chunks the latest content, recomputes embeddings, and inserts the replacement chunks transactionally. This prevents old content from remaining searchable after a source document changes or becomes shorter.
+
+### How do you handle tenant isolation?
+
+Tenant isolation must exist at every layer: authentication claims, API context, SQL filters, retrieval, MCP tools, cache keys, memory, logs, and background jobs. Cache keys must include tenant identity so one tenant cannot receive another tenant's cached answer. PostgreSQL Row-Level Security can add a second enforcement layer in a larger deployment.
+
+### How do you version prompts, embeddings, and datasets?
+
+Every trace should record the schema version, prompt version, embedding model and revision, chunking version, retriever version, reranker version, guardrail version, and evaluation dataset version. This makes regressions explainable and allows safe rollback when retrieval quality or security metrics decline.
+
+### How do you control MCP tool permissions?
+
+Tools are classified as read-only, write-with-approval, or administrative. Every call validates the user, tenant, role, tool allowlist, input schema, resource ownership, approval state, and idempotency key. The model can request an action, but application code—not the model—decides whether it is authorized.
+
+### How do you handle failed or slow tools?
+
+Each tool has a timeout, bounded retry policy, circuit breaker, correlation ID, and structured error response. Retries are limited to transient failures and destructive operations are not blindly retried. If a tool remains unavailable, the agent returns a partial but honest answer and never claims success without a verified result.
+
+### How do you prevent prompt injection from documents?
+
+Retrieved documents are untrusted evidence, not instructions. They are delimited and inspected, while system and workflow instructions remain authoritative. Tool access is enforced independently through schemas and authorization, so a malicious document cannot grant itself permission to call a tool or expose data.
+
+### How do you evaluate the end-to-end agent?
+
+Evaluation is split into retrieval, generation, agent behavior, and security. We test source recall, citation validity, groundedness, answer correctness, tool selection, approval behavior, failure recovery, prompt injection, PII leakage, and cross-tenant access. Each run records model, prompt, retriever, embedding, and dataset versions.
+
+## Current implementation status
+
+### Implemented
+
+- PostgreSQL with the pgvector extension
+- HNSW vector index and PostgreSQL full-text GIN index
+- Local `sentence-transformers/all-MiniLM-L6-v2` embeddings
+- Markdown, text, and PDF loaders
+- Deterministic paragraph-aware chunking
+- Tenant and subject-aware retrieval filtering
+- Hybrid vector and keyword retrieval
+- Document upsert and stale-chunk replacement
+- Versioned SQL migration runner
+- Redis and PostgreSQL Docker infrastructure
+- Real ingestion and retrieval smoke test
+- Unit tests and Ruff checks
+
+### Not yet implemented
+
+- Authentication and SSO
+- Formal RBAC policy engine
+- PII detection and reversible masking
+- Prompt-injection guardrail service
+- LangGraph orchestration
+- MCP servers and tool gateway
+- Human approval service
+- Reranking model
+- Automated retrieval benchmark dataset
+- OpenTelemetry or Langfuse tracing
+- Asynchronous ingestion workers
+- Rate limits and per-workflow budgets
+- CI/CD and deployment automation
+
+Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
+
+## Short project explanation
+
+> I built the retrieval foundation for an enterprise agentic operations platform. It ingests PDF, Markdown, and text documents, chunks them deterministically, creates free local embeddings, stores them in PostgreSQL with pgvector, and performs permission-aware hybrid retrieval using both vector similarity and full-text search. Re-ingestion removes stale chunks, and a Docker-backed smoke test verifies that authorized users retrieve the correct evidence while cross-tenant users receive no results. The next layer adds guarded agent workflows, MCP tools, human approval, masking, and evaluation infrastructure.
+
+## Answer structure for interviews
+
+For most questions, answer in this order:
+
+1. State the design decision.
+2. Explain the production reason.
+3. Mention the security or reliability tradeoff.
+4. Describe how you would measure it.
+5. Be clear about what is implemented today.
+
 ### What is still incomplete in this project?
 
 The current vertical slice has local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, and a real Docker-backed smoke test. The next production layers are authentication, formal RBAC, PII masking, MCP tool authorization, LangGraph orchestration, evaluation datasets, and observability. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
