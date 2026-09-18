@@ -31,3 +31,13 @@ class SearchResultResponse(BaseModel):
 
 class SearchResponse(BaseModel):
     results: list[SearchResultResponse]
+
+
+class AgentRequest(BaseModel):
+    query: str = Field(min_length=1)
+
+
+class AgentResponse(BaseModel):
+    answer: str
+    citations: list[str]
+    live_status: dict[str, str] | None = None

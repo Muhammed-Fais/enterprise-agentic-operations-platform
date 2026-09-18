@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from agentic_ai.agents import build_agent_graph
 from agentic_ai.auth import AuthContext, get_auth_context
 from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
@@ -9,8 +10,10 @@ from agentic_ai.ingestion import IngestionService, LoadedDocument, chunk_text
 from agentic_ai.retrieval.contracts import AccessContext
 from agentic_ai.retrieval.pgvector import PgVectorRetriever
 
-from .dependencies import get_embedder
+from .dependencies import get_answer_model, get_embedder
 from .schemas import (
+    AgentRequest,
+    AgentResponse,
     DocumentIngestRequest,
     DocumentIngestResponse,
     SearchRequest,
@@ -19,6 +22,10 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/v1")
+
+
+async def _local_status_tool(incident_id: str) -> dict[str, str]:
+    return {"incident_id": incident_id, "status": "investigating", "source": "demo-status-system"}
 
 
 @router.post("/documents", response_model=DocumentIngestResponse, status_code=201)
@@ -65,4 +72,30 @@ async def search_documents(
     )
     return SearchResponse(
         results=[SearchResultResponse(**result.__dict__) for result in results]
+    )
+
+
+@router.post("/agent/run", response_model=AgentResponse)
+async def run_agent(
+    request: AgentRequest,
+    auth: AuthContext = Depends(get_auth_context),
+    session: AsyncSession = Depends(get_session),
+    embedder: Embedder = Depends(get_embedder),
+    answer_model=Depends(get_answer_model),
+) -> AgentResponse:
+    graph = build_agent_graph(
+        PgVectorRetriever(session, embedder),
+        status_tool=_local_status_tool,
+        answer_model=answer_model.answer,
+    )
+    result = await graph.ainvoke(
+        {
+            "query": mask_pii(request.query).text,
+            "access": AccessContext(auth.tenant_id, auth.subject_id, auth.roles),
+        }
+    )
+    return AgentResponse(
+        answer=result["answer"],
+        citations=result.get("citations", []),
+        live_status=result.get("live_status"),
     )

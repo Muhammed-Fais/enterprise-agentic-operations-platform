@@ -142,6 +142,18 @@ The workflow classifies the request before calling tools. Terms such as `current
 
 The retrieval node returns an empty evidence list when nothing authorized is relevant. The composition node produces an explicit insufficient-evidence response with no citations rather than fabricating an answer. This behavior is tested as a first-class path.
 
+### Why use Ollama and a local model here?
+
+The project is designed to be free to run locally, so the answer-generation path uses Ollama rather than a paid hosted API. The model is injected behind a small adapter, which lets us measure the workflow independently from the model provider. The important safety boundary remains retrieval authorization and abstention; the local model is never allowed to invent evidence.
+
+### How do you prevent the model from answering from unsupported context?
+
+The graph only calls the model after retrieval returns authorized evidence. The prompt labels the retrieved text as evidence and explicitly treats instructions inside it as untrusted. The response carries citations from the retrieved sources, and the no-evidence path returns a refusal without invoking the model.
+
+### How do you handle local-model unavailability?
+
+The API should distinguish model unavailability from retrieval failure. A production implementation can return a structured degraded response, retry within a deadline, or use a configured fallback model. It must not silently return a fabricated answer or hide that generation failed.
+
 ### How do you handle failed or slow tools?
 
 Each tool has a timeout, bounded retry policy, circuit breaker, correlation ID, and structured error response. Retries are limited to transient failures and destructive operations are not blindly retried. If a tool remains unavailable, the agent returns a partial but honest answer and never claims success without a verified result.
@@ -210,6 +222,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - MCP tool server with read-only and draft tools
 - Application-side role checks and human approval authorization
 - Bounded LangGraph retrieval and investigation workflow
+- Local Ollama-backed answer generation through `POST /v1/agent/run`
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 

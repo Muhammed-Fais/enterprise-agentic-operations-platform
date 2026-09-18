@@ -59,7 +59,7 @@ The API can be started with:
 .venv/bin/uvicorn agentic_ai.api.app:app --reload
 ```
 
-It currently exposes `POST /v1/documents` and `POST /v1/search`. Identity fields are explicit for local development; production authentication and RBAC are next.
+It currently exposes `POST /v1/documents`, `POST /v1/search`, and `POST /v1/agent/run`. Identity is derived from JWT claims.
 
 The MCP demo server can be run with:
 
@@ -68,3 +68,5 @@ The MCP demo server can be run with:
 ```
 
 Tool authorization is enforced in the application layer, including role checks, approval-token binding, expiry, and idempotency. MCP tool annotations are treated as metadata, not as a security boundary.
+
+The agent answer path uses local Ollama through `OLLAMA_MODEL` and defaults to `qwen3.5:9b`. The graph abstains before calling the model when no authorized evidence is retrieved.

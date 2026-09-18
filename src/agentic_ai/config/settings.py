@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 384
     jwt_secret: str = "development-only-change-me"
     jwt_algorithm: str = "HS256"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3.5:9b"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
