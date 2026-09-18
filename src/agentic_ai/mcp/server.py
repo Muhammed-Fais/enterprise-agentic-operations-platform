@@ -20,6 +20,19 @@ def draft_incident_ticket(title: str, description: str) -> dict[str, str]:
     return {"title": title, "description": description, "status": "draft"}
 
 
+@mcp.tool()
+def create_incident_ticket(
+    title: str, description: str, idempotency_key: str
+) -> dict[str, str]:
+    """Create a demo incident ticket after application authorization and approval."""
+    return {
+        "ticket_id": f"TICKET-{idempotency_key[:12]}",
+        "title": title,
+        "description": description,
+        "status": "created",
+    }
+
+
 def main() -> None:
     mcp.run(transport="stdio")
 

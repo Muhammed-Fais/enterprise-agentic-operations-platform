@@ -59,7 +59,7 @@ The API can be started with:
 .venv/bin/uvicorn agentic_ai.api.app:app --reload
 ```
 
-It currently exposes `POST /v1/documents`, `POST /v1/search`, and `POST /v1/agent/run`. Identity is derived from JWT claims.
+It currently exposes `POST /v1/documents`, `POST /v1/search`, `POST /v1/agent/run`, `POST /v1/actions/request-approval`, and `POST /v1/actions/execute`. Identity is derived from JWT claims.
 
 The MCP demo server can be run with:
 

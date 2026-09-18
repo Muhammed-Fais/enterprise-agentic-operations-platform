@@ -41,3 +41,24 @@ class AgentResponse(BaseModel):
     answer: str
     citations: list[str]
     live_status: dict[str, str] | None = None
+
+
+class ApprovalRequest(BaseModel):
+    tool_name: str = Field(min_length=1)
+    arguments: dict[str, object]
+
+
+class ApprovalResponse(BaseModel):
+    approval_token: str
+    expires_in_seconds: int = 300
+
+
+class ActionExecuteRequest(BaseModel):
+    tool_name: str = Field(min_length=1)
+    arguments: dict[str, object]
+    approval_token: str = Field(min_length=1)
+    idempotency_key: str = Field(min_length=1)
+
+
+class ActionExecuteResponse(BaseModel):
+    result: dict[str, str]

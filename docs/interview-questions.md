@@ -130,6 +130,14 @@ For a write tool, the application hashes the exact arguments, binds an approval 
 
 The approval is rejected because the arguments hash no longer matches. The model cannot convert approval for one action into permission for another action. The system logs the mismatch as a security event.
 
+### How does approval become an actual action?
+
+The API separates approval creation from execution. A user requests approval for a specific tool and argument payload, then the execution request must present the matching token and idempotency key. The application authorizes the call before invoking the MCP write tool. This makes the approval boundary auditable and prevents the model from silently executing a draft.
+
+### What happens if the same action is submitted twice?
+
+The caller supplies an idempotency key. The authorization layer records completed keys and treats a repeated key as already authorized, while the downstream system should also enforce idempotency. In a multi-instance deployment, this record belongs in Redis or PostgreSQL rather than process memory.
+
 ### How does the agent communicate with an MCP server?
 
 The application uses the official MCP client over a typed transport. The local development path launches the MCP server as a subprocess over stdio; a deployed version can use Streamable HTTP. The client validates the tool result and converts it into the graph's typed state. Transport failures are separate from business-tool failures and should be traced independently.
@@ -232,6 +240,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Bounded LangGraph retrieval and investigation workflow
 - Local Ollama-backed answer generation through `POST /v1/agent/run`
 - MCP client-to-server stdio transport for live incident status
+- API approval and execution endpoints for a write-capable MCP tool
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 

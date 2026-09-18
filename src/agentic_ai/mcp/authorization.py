@@ -84,6 +84,11 @@ class ToolAuthorization:
     def request_approval(
         self, context: AuthContext, tool_name: str, arguments: dict[str, object]
     ) -> str:
+        policy = self._policies.get(tool_name)
+        if not policy or policy.capability is not ToolCapability.WRITE:
+            raise PermissionError("approval is only available for write tools")
+        if not (policy.allowed_roles & set(context.roles)):
+            raise PermissionError("tool is not authorized for this role")
         token = secrets.token_urlsafe(24)
         self._approvals[token] = _Approval(
             token=token,
