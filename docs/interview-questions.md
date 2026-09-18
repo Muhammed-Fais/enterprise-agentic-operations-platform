@@ -130,6 +130,10 @@ Move ingestion to an asynchronous worker queue, make jobs idempotent using conte
 
 Use ordered, versioned migrations, backward-compatible changes first, data backfills as resumable jobs, and indexes built with production-safe strategies. Embedding-dimension changes require a new index or table and a controlled re-index rather than an in-place mismatch.
 
+### What does your CI/CD pipeline validate?
+
+Every push and pull request runs linting, the automated test suite, dependency vulnerability auditing, CodeQL analysis, and a production-style Docker build. The image uses a slim Python runtime, runs as a non-root user, excludes credentials and local caches through `.dockerignore`, and exposes a health check. The workflow only validates and builds; deployment requires an environment-specific approval and secret manager integration.
+
 ### How do you handle stale documents and re-ingestion?
 
 Documents are identified by `tenant_id` and `external_id`, while a content hash detects changes. Re-ingestion upserts the document, removes its previous chunks, re-chunks the latest content, recomputes embeddings, and inserts the replacement chunks transactionally. This prevents old content from remaining searchable after a source document changes or becomes shorter.

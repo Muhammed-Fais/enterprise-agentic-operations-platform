@@ -74,3 +74,7 @@ Tool authorization is enforced in the application layer, including role checks, 
 The agent answer path uses local Ollama through `OLLAMA_MODEL` and defaults to `qwen3.5:9b`. The graph abstains before calling the model when no authorized evidence is retrieved.
 
 Protected API routes use Redis-backed per-tenant/user rate limits and daily agent workflow budgets. Configure `RATE_LIMIT_REQUESTS_PER_MINUTE` and `AGENT_BUDGET_UNITS_PER_DAY` in `.env`; Redis control failures fail closed with `503`.
+
+## CI/CD and containerization
+
+GitHub Actions runs Ruff, the test suite, dependency auditing, CodeQL analysis, and a Docker build on pushes and pull requests. The application image runs as a non-root user and does not contain `.env`, tests, credentials, or model caches. Deployment credentials and runtime secrets must be provided through the target environment’s secret manager.
