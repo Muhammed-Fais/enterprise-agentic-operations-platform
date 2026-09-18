@@ -3,7 +3,12 @@ from functools import lru_cache
 from agentic_ai.config import get_settings
 from agentic_ai.embeddings import LocalSentenceTransformerEmbedder
 from agentic_ai.llm import OllamaChatModel
-from agentic_ai.mcp import MCPStatusClient, ToolAuthorization, ToolCapability, ToolPolicy
+from agentic_ai.mcp import (
+    MCPStatusClient,
+    PersistentToolAuthorization,
+    ToolCapability,
+    ToolPolicy,
+)
 
 
 @lru_cache
@@ -23,8 +28,8 @@ def get_mcp_status_client() -> MCPStatusClient:
 
 
 @lru_cache
-def get_tool_authorization() -> ToolAuthorization:
-    return ToolAuthorization(
+def get_tool_authorization() -> PersistentToolAuthorization:
+    return PersistentToolAuthorization(
         [
             ToolPolicy(
                 "create_incident_ticket",

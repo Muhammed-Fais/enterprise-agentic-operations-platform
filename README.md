@@ -67,6 +67,6 @@ The MCP demo server can be run with:
 .venv/bin/python -m agentic_ai.mcp.server
 ```
 
-Tool authorization is enforced in the application layer, including role checks, approval-token binding, expiry, and idempotency. MCP tool annotations are treated as metadata, not as a security boundary.
+Tool authorization is enforced in the application layer, including role checks, hashed expiring approval records, exact-argument binding, durable PostgreSQL idempotency, and failure state. MCP tool annotations are treated as metadata, not as a security boundary. The in-memory authorization class is retained only for isolated unit tests; the API uses the persistent implementation.
 
 The agent answer path uses local Ollama through `OLLAMA_MODEL` and defaults to `qwen3.5:9b`. The graph abstains before calling the model when no authorized evidence is retrieved.

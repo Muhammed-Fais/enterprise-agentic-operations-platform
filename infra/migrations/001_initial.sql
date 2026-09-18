@@ -58,3 +58,31 @@ CREATE TABLE IF NOT EXISTS audit_events (
 
 CREATE INDEX IF NOT EXISTS audit_events_tenant_time_idx
     ON audit_events (tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS tool_approvals (
+    id UUID PRIMARY KEY,
+    token_hash TEXT NOT NULL UNIQUE,
+    tenant_id TEXT NOT NULL,
+    subject_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    arguments_hash TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'consumed', 'expired', 'revoked')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    consumed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS tool_approvals_subject_idx
+    ON tool_approvals (tenant_id, subject_id, status, expires_at);
+
+CREATE TABLE IF NOT EXISTS idempotency_records (
+    tenant_id TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    arguments_hash TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'failed')),
+    result JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at TIMESTAMPTZ,
+    PRIMARY KEY (tenant_id, idempotency_key)
+);

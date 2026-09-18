@@ -136,7 +136,15 @@ The API separates approval creation from execution. A user requests approval for
 
 ### What happens if the same action is submitted twice?
 
-The caller supplies an idempotency key. The authorization layer records completed keys and treats a repeated key as already authorized, while the downstream system should also enforce idempotency. In a multi-instance deployment, this record belongs in Redis or PostgreSQL rather than process memory.
+The caller supplies an idempotency key. The authorization layer persists the key, canonical argument hash, status, and result in PostgreSQL. A completed key returns the stored result without invoking the tool again; an in-progress key is rejected; and a key reused with different arguments is a security error. The downstream system should also enforce idempotency because exactly-once behavior cannot be assumed across process or network failures.
+
+### How is approval state made production-safe?
+
+Approval tokens are generated with a cryptographically secure random source, but only their SHA-256 hashes are stored. Each record is bound to tenant, subject, tool, and an exact canonical argument hash, and expires after a short TTL. The execution transaction locks the approval row, consumes it once, and creates a durable idempotency record. This prevents process restarts, multiple API replicas, and database-visible token leakage from turning into reusable authorization.
+
+### What happens if the approved tool fails after authorization?
+
+The durable idempotency record moves from `in_progress` to `failed` with a structured error marker. The same key cannot silently retry a potentially ambiguous side effect; the workflow must use an explicit recovery or reconciliation path. For a production integration, the downstream MCP tool should implement an idempotency contract and expose a status/reconciliation operation.
 
 ### How does the agent communicate with an MCP server?
 
@@ -213,19 +221,14 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 
 ### Not yet implemented
 
-- Authentication and SSO
-- Formal RBAC policy engine
-- PII detection and reversible masking
 - Prompt-injection guardrail service
-- LangGraph orchestration
-- MCP servers and tool gateway
-- Human approval service
 - Reranking model
-- Automated retrieval benchmark dataset
 - OpenTelemetry or Langfuse tracing
 - Asynchronous ingestion workers
 - Rate limits and per-workflow budgets
 - CI/CD and deployment automation
+- Production SSO/IdP integration and key rotation
+- PostgreSQL Row-Level Security as a second tenant-isolation layer
 
 ### Recently added
 
@@ -237,6 +240,8 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Initial PII masking guardrail before embeddings and storage
 - MCP tool server with read-only and draft tools
 - Application-side role checks and human approval authorization
+- PostgreSQL-backed expiring approval records with hashed tokens
+- Durable idempotency records with replay protection and failure state
 - Bounded LangGraph retrieval and investigation workflow
 - Local Ollama-backed answer generation through `POST /v1/agent/run`
 - MCP client-to-server stdio transport for live incident status
@@ -246,7 +251,7 @@ Be explicit about this boundary in an interview. It is stronger to say what is w
 
 ## Short project explanation
 
-> I built the retrieval foundation for an enterprise agentic operations platform. It ingests PDF, Markdown, and text documents, chunks them deterministically, creates free local embeddings, stores them in PostgreSQL with pgvector, and performs permission-aware hybrid retrieval using both vector similarity and full-text search. Re-ingestion removes stale chunks, and a Docker-backed smoke test verifies that authorized users retrieve the correct evidence while cross-tenant users receive no results. The next layer adds guarded agent workflows, MCP tools, human approval, masking, and evaluation infrastructure.
+> I built an enterprise agentic operations platform that ingests PDF, Markdown, and text documents, chunks them deterministically, creates free local embeddings, stores them in PostgreSQL with pgvector, and performs permission-aware hybrid retrieval using both vector similarity and full-text search. A bounded LangGraph workflow can investigate live incident status through MCP, while write actions require JWT-derived authorization, exact-argument human approval, durable idempotency, and failure tracking. The system also includes PII masking, evaluation metrics, Docker infrastructure, and automated tests; the remaining work is explicit production hardening rather than hidden demo behavior.
 
 ## Answer structure for interviews
 
@@ -260,4 +265,4 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The current vertical slice has local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, and a real Docker-backed smoke test. The next production layers are authentication, formal RBAC, PII masking, MCP tool authorization, LangGraph orchestration, evaluation datasets, and observability. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing, asynchronous workers, rate limits, budgets, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.

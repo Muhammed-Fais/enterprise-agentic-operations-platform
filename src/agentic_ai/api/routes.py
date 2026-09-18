@@ -7,7 +7,7 @@ from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
 from agentic_ai.guardrails import mask_pii
 from agentic_ai.ingestion import IngestionService, LoadedDocument, chunk_text
-from agentic_ai.mcp import ApprovalRequired, MCPStatusClient, ToolAuthorization
+from agentic_ai.mcp import MCPStatusClient, PersistentToolAuthorization
 from agentic_ai.retrieval.contracts import AccessContext
 from agentic_ai.retrieval.pgvector import PgVectorRetriever
 
@@ -112,10 +112,11 @@ async def run_agent(
 async def request_action_approval(
     request: ApprovalRequest,
     auth: AuthContext = Depends(get_auth_context),
-    authorization: ToolAuthorization = Depends(get_tool_authorization),
+    session: AsyncSession = Depends(get_session),
+    authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
 ) -> ApprovalResponse:
     try:
-        token = authorization.request_approval(auth, request.tool_name, request.arguments)
+        token = await authorization.request_approval(session, auth, request.tool_name, request.arguments)
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     return ApprovalResponse(approval_token=token)
@@ -125,25 +126,10 @@ async def request_action_approval(
 async def execute_action(
     request: ActionExecuteRequest,
     auth: AuthContext = Depends(get_auth_context),
-    authorization: ToolAuthorization = Depends(get_tool_authorization),
+    session: AsyncSession = Depends(get_session),
+    authorization: PersistentToolAuthorization = Depends(get_tool_authorization),
     mcp_client: MCPStatusClient = Depends(get_mcp_status_client),
 ) -> ActionExecuteResponse:
-    try:
-        authorization.authorize(
-            auth,
-            request.tool_name,
-            request.arguments,
-            approval_token=request.approval_token,
-            idempotency_key=request.idempotency_key,
-        )
-    except ApprovalRequired as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": "human approval required", "approval_token": exc.approval_token},
-        ) from exc
-    except PermissionError as exc:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
-
     if request.tool_name != "create_incident_ticket":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="unsupported action")
     required = {"title", "description"}
@@ -152,9 +138,32 @@ async def execute_action(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="invalid ticket arguments",
         )
-    result = await mcp_client.create_incident_ticket(
-        str(request.arguments["title"]),
-        str(request.arguments["description"]),
-        request.idempotency_key,
-    )
+    try:
+        cached = await authorization.get_idempotent_result(
+            session, auth, request.tool_name, request.arguments, request.idempotency_key
+        )
+        if cached is not None:
+            return ActionExecuteResponse(result=cached)
+        await authorization.authorize(
+            session,
+            auth,
+            request.tool_name,
+            request.arguments,
+            approval_token=request.approval_token,
+            idempotency_key=request.idempotency_key,
+        )
+    except PermissionError as exc:
+        code = status.HTTP_409_CONFLICT if "idempotency" in str(exc) else status.HTTP_403_FORBIDDEN
+        raise HTTPException(status_code=code, detail=str(exc)) from exc
+
+    try:
+        result = await mcp_client.create_incident_ticket(
+            str(request.arguments["title"]),
+            str(request.arguments["description"]),
+            request.idempotency_key,
+        )
+    except Exception as exc:
+        await authorization.fail(session, auth, request.idempotency_key, str(exc))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="action execution failed") from exc
+    await authorization.complete(session, auth, request.idempotency_key, result)
     return ActionExecuteResponse(result=result)
