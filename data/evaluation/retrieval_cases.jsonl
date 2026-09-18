@@ -1,0 +1,3 @@
+{"case_id":"incident-latency","query":"What should I check when database latency increases?","relevant_chunk_ids":["incident-001-chunk-0"],"forbidden_chunk_ids":["hr-001-chunk-0"]}
+{"case_id":"replica-lag","query":"When should replica lag be escalated?","relevant_chunk_ids":["incident-001-chunk-1"],"forbidden_chunk_ids":["finance-001-chunk-0"]}
+{"case_id":"access-policy","query":"Who needs approval for sensitive access?","relevant_chunk_ids":["policy-001-chunk-0"],"forbidden_chunk_ids":["incident-001-chunk-0"]}

@@ -102,6 +102,18 @@ Retrieved documents are untrusted evidence, not instructions. They are delimited
 
 Evaluation is split into retrieval, generation, agent behavior, and security. We test source recall, citation validity, groundedness, answer correctness, tool selection, approval behavior, failure recovery, prompt injection, PII leakage, and cross-tenant access. Each run records model, prompt, retriever, embedding, and dataset versions.
 
+### Which retrieval metrics do you use?
+
+Recall@K measures whether the expected evidence appears in the top K results. Precision@K measures how much of the returned context is relevant. MRR rewards placing the first relevant result near the top. We also track forbidden-retrieval rate because retrieving unauthorized content is a security failure even if the answer is technically correct.
+
+### Why should evaluation cases be versioned?
+
+Retrieval quality depends on documents, chunking, embeddings, ranking weights, and access rules. A versioned dataset makes comparisons reproducible and allows us to detect regressions when any of those components changes. Evaluation data should include normal, ambiguous, no-answer, permission-sensitive, and adversarial queries.
+
+### How do you test ACL correctness?
+
+Each evaluation case can specify forbidden chunks or documents. The evaluator treats any forbidden result in the top K as a failure and reports a forbidden-retrieval rate. This metric is separate from relevance because a highly relevant unauthorized document is still unacceptable.
+
 ## Current implementation status
 
 ### Implemented
@@ -134,6 +146,12 @@ Evaluation is split into retrieval, generation, agent behavior, and security. We
 - Asynchronous ingestion workers
 - Rate limits and per-workflow budgets
 - CI/CD and deployment automation
+
+### Recently added
+
+- Versioned retrieval evaluation cases
+- Recall@K, Precision@K, MRR, and forbidden-retrieval metrics
+- Unit tests for evaluation behavior
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
