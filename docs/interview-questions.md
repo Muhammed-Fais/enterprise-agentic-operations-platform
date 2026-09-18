@@ -60,6 +60,18 @@ Redis is optimized for fast temporary access, not durable log retention, complia
 
 The API should expose typed request and response contracts, validate tenant and subject context, keep model loading outside request handlers, and return stable identifiers and provenance. The current API slice exposes document ingestion and permission-aware search; authentication and RBAC will replace the client-supplied identity fields before production deployment.
 
+### Where does tenant identity come from?
+
+It must come from a validated authentication token, not from the request body. The current API validates a signed JWT and derives `tenant_id`, `sub`, and `roles` from its claims. Those values are passed into retrieval and ingestion. A production deployment would use an external identity provider and rotate signing keys instead of the development HMAC secret.
+
+### How does PII masking work?
+
+The guardrail scans content and queries for patterns such as email addresses, phone numbers, SSNs, and API-key-like values before embedding or persistence. It replaces them with typed placeholders and records only masking metadata. The current implementation is intentionally conservative and should be extended with a tested recognizer such as an enterprise DLP service for broader coverage.
+
+### Should PII masking be reversible?
+
+Not by default. Reversible masking creates a sensitive mapping that must be encrypted, access-controlled, tenant-scoped, and short-lived. For retrieval and model context, irreversible masking is safer. Reversal should exist only for an approved workflow that genuinely needs the original value.
+
 ### How do you handle tool failure?
 
 Use bounded retries only for transient failures, apply timeouts and circuit breakers, preserve the workflow state, and return a partial-but-honest response when the tool remains unavailable. The agent should never claim that a tool succeeded without a verified result.
@@ -165,6 +177,8 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Recall@K, Precision@K, MRR, and forbidden-retrieval metrics
 - Unit tests for evaluation behavior
 - Typed FastAPI document-ingestion and retrieval endpoints
+- JWT-derived tenant and subject context
+- Initial PII masking guardrail before embeddings and storage
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 

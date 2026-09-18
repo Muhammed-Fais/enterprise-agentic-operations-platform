@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimensions: int = 384
+    jwt_secret: str = "development-only-change-me"
+    jwt_algorithm: str = "HS256"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
