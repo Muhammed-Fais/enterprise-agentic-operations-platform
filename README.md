@@ -42,3 +42,11 @@ The retrieval implementation combines pgvector cosine similarity with PostgreSQL
 ```bash
 .venv/bin/python -m agentic_ai.db.migrate
 ```
+
+Run the local infrastructure with Docker Desktop:
+
+```bash
+docker compose up -d postgres redis
+```
+
+See [production interview questions and answers](docs/interview-questions.md) for the reasoning behind the retrieval, security, agent, MCP, and operations design.
