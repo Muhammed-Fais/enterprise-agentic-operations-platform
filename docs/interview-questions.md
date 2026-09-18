@@ -166,6 +166,10 @@ Stdio is isolated and simple for a local tool process. Streamable HTTP is the de
 
 The graph makes the workflow explicit: retrieve evidence, decide whether a live investigation is needed, call a read-only status tool, and compose a cited response. Explicit transitions make retries, limits, traces, and tests easier than an unconstrained loop. The current graph has no hidden tool loop and abstains when retrieval returns no evidence.
 
+### Are you using LangGraph or Langflow?
+
+The production workflow uses LangGraph. LangGraph is a code-first orchestration runtime, so graph state, authorization boundaries, retries, tests, and deployment behavior are reviewable in Git and enforceable in application code. Langflow is a visual flow builder that can be useful for prototyping, demonstrations, and helping teams inspect chains, but it is not currently the runtime security boundary for this platform. If introduced later, Langflow would call the same guarded application services rather than bypassing retrieval authorization or MCP policy checks.
+
 ### How do you decide whether to call a live tool?
 
 The workflow classifies the request before calling tools. Terms such as `current`, `live`, `ongoing`, and `status` route the request to a read-only status check. In production, this classifier would be evaluated on labeled requests and combined with authorization policy; keyword routing is only the initial deterministic implementation.
