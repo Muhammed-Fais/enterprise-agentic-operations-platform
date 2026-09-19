@@ -128,7 +128,11 @@ Redis provides atomic counters through Lua scripts. Each protected request is ke
 
 ### How do you scale ingestion?
 
-Move ingestion to an asynchronous worker queue, make jobs idempotent using content hashes, batch embedding requests locally, upsert chunks transactionally, and expose job status. A failed document should be retried independently without duplicating successful documents.
+The API persists a tenant-scoped ingestion job in PostgreSQL and publishes only its job ID to a Redis Stream. Workers claim the job, increment an attempt counter, perform transactional document replacement, and acknowledge the message only after completion. Transient failures are requeued up to a bounded maximum; terminal failures remain queryable with an error and attempt count. The content hash and document upsert make retries safe, while PostgreSQL—not Redis—retains the payload and status of record.
+
+### Why does the Redis ingestion message contain only a job ID?
+
+Document content may contain PII, confidential material, or large payloads. Keeping it in PostgreSQL gives us durable tenant scoping, status inspection, backups, and a single source of truth. Redis Streams provide delivery coordination and consumer-group semantics; they are not the system of record. A production deployment still needs Redis authentication, TLS, retention monitoring, and a recovery policy for pending messages.
 
 ### How do you deploy schema changes?
 
@@ -266,11 +270,9 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 ### Not yet implemented
 
 - Reranking model
-- OpenTelemetry or Langfuse tracing
-- Asynchronous ingestion workers
-- Rate limits and per-workflow budgets
-- CI/CD and deployment automation
 - Production SSO/IdP integration and key rotation
+- Deployment promotion and runtime secret-manager integration
+- OpenTelemetry export beyond Langfuse
 - PostgreSQL Row-Level Security as a second tenant-isolation layer
 
 ### Recently added
@@ -296,6 +298,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Optional Langfuse v4 agent tracing with content capture disabled by default
 - Explicit degraded agent responses when the local model times out or is unavailable
 - Redis-backed per-tenant/user rate limiting and daily agent workflow budgets
+- Redis Streams ingestion queue with a durable PostgreSQL job record, retries, and worker status
 
 Be explicit about this boundary in an interview. It is stronger to say what is working and what remains than to claim enterprise features that have not been demonstrated.
 
@@ -315,7 +318,7 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The working vertical slice now includes JWT-derived identity, PII masking, prompt-injection blocking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, retrieval and security evaluation gates, and automated tests. The remaining production hardening includes SSO/key rotation, distributed tracing beyond Langfuse, asynchronous workers, CI/CD deployment promotion, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, prompt-injection blocking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, Redis Streams ingestion workers, retrieval and security evaluation gates, and automated tests. The remaining production hardening includes SSO/key rotation, distributed tracing beyond Langfuse, CI/CD deployment promotion, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
 ### Why separate liveness and readiness endpoints?
 
 `/health` is intentionally cheap and does not depend on external services, so a process supervisor can distinguish “the process is alive” from dependency failures. `/ready` checks PostgreSQL and Redis and returns HTTP 503 until both are available. This prevents a load balancer or Kubernetes service from sending traffic to an instance that has started but cannot serve protected requests. The Compose healthcheck uses `/ready`, while liveness monitoring uses `/health`.

@@ -15,6 +15,20 @@ class DocumentIngestResponse(BaseModel):
     chunks_created: int
 
 
+class IngestionJobResponse(BaseModel):
+    job_id: str
+    status: str
+
+
+class IngestionJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    documents_processed: int
+    attempt_count: int
+    max_attempts: int
+    error_message: str | None = None
+
+
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1)
     limit: int = Field(default=5, ge=1, le=50)

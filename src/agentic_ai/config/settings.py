@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     langfuse_capture_content: bool = False
     rate_limit_requests_per_minute: int = 60
     agent_budget_units_per_day: int = 100
+    ingestion_max_attempts: int = 3
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

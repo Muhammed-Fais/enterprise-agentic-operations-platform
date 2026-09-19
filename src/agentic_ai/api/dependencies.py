@@ -5,6 +5,7 @@ from redis.asyncio import Redis
 from agentic_ai.config import get_settings
 from agentic_ai.controls import RedisControls
 from agentic_ai.embeddings import LocalSentenceTransformerEmbedder
+from agentic_ai.ingestion import IngestionQueue
 from agentic_ai.llm import OllamaChatModel
 from agentic_ai.mcp import (
     MCPStatusClient,
@@ -48,6 +49,11 @@ def get_redis_controls() -> RedisControls:
         requests_per_minute=settings.rate_limit_requests_per_minute,
         agent_budget_per_day=settings.agent_budget_units_per_day,
     )
+
+
+@lru_cache
+def get_ingestion_queue() -> IngestionQueue:
+    return IngestionQueue(get_redis())
 
 
 @lru_cache

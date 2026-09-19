@@ -93,7 +93,15 @@ The API can be started with:
 .venv/bin/uvicorn agentic_ai.api.app:app --reload
 ```
 
-It currently exposes `POST /v1/documents`, `POST /v1/search`, `POST /v1/agent/run`, `POST /v1/actions/request-approval`, and `POST /v1/actions/execute`. Identity is derived from JWT claims.
+It currently exposes synchronous `POST /v1/documents`, asynchronous `POST /v1/ingestion/jobs` with `GET /v1/ingestion/jobs/{job_id}`, `POST /v1/search`, `POST /v1/agent/run`, `POST /v1/actions/request-approval`, and `POST /v1/actions/execute`. Identity is derived from JWT claims.
+
+The complete Compose profile also starts an ingestion worker:
+
+```bash
+docker compose --profile app up --build
+```
+
+Async jobs store masked document payloads and tenant context durably in PostgreSQL, while Redis Streams carry only job IDs. The worker claims each job, increments its attempt count, retries transient failures up to the configured limit, acknowledges successful messages, and leaves terminal failures in the PostgreSQL job record for inspection.
 
 The MCP demo server can be run with:
 

@@ -1,9 +1,13 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from agentic_ai.agents import build_agent_graph
 from agentic_ai.audit import record_event
 from agentic_ai.auth import AuthContext, get_auth_context
+from agentic_ai.config import get_settings
 from agentic_ai.controls import (
     BudgetExceeded,
     RateLimitExceeded,
@@ -13,7 +17,14 @@ from agentic_ai.controls import (
 from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
 from agentic_ai.guardrails import detect_prompt_injection, mask_pii
-from agentic_ai.ingestion import IngestionService, LoadedDocument, chunk_text
+from agentic_ai.ingestion import (
+    IngestionQueue,
+    IngestionService,
+    LoadedDocument,
+    chunk_text,
+    create_ingestion_job,
+    get_ingestion_job,
+)
 from agentic_ai.mcp import MCPStatusClient, PersistentToolAuthorization
 from agentic_ai.retrieval.contracts import AccessContext
 from agentic_ai.retrieval.pgvector import PgVectorRetriever
@@ -21,6 +32,7 @@ from agentic_ai.retrieval.pgvector import PgVectorRetriever
 from .dependencies import (
     get_answer_model,
     get_embedder,
+    get_ingestion_queue,
     get_mcp_status_client,
     get_observability,
     get_redis_controls,
@@ -35,6 +47,8 @@ from .schemas import (
     ApprovalResponse,
     DocumentIngestRequest,
     DocumentIngestResponse,
+    IngestionJobResponse,
+    IngestionJobStatusResponse,
     SearchRequest,
     SearchResponse,
     SearchResultResponse,
@@ -108,6 +122,76 @@ async def ingest_document(
     return DocumentIngestResponse(
         document_id=str(document_id),
         chunks_created=len(chunk_text(masked.text)),
+    )
+
+
+@router.post("/ingestion/jobs", response_model=IngestionJobResponse, status_code=202)
+async def submit_ingestion_job(
+    request: DocumentIngestRequest,
+    http_request: Request,
+    auth: AuthContext = Depends(get_auth_context),
+    session: AsyncSession = Depends(get_session),
+    queue: IngestionQueue = Depends(get_ingestion_queue),
+    _: None = Depends(enforce_rate_limit),
+) -> IngestionJobResponse:
+    masked = mask_pii(request.content)
+    document = LoadedDocument(
+        external_id=request.external_id,
+        title=request.title,
+        source=request.source,
+        content=masked.text,
+    )
+    metadata = {**request.metadata, "pii_masked": str(bool(masked.counts)).lower()}
+    job_id = await create_ingestion_job(
+        session,
+        tenant_id=auth.tenant_id,
+        document=document,
+        allowed_subjects=request.allowed_subjects or [auth.subject_id],
+        metadata=metadata,
+        max_attempts=get_settings().ingestion_max_attempts,
+    )
+    try:
+        await queue.enqueue(job_id)
+    except Exception as exc:
+        await session.execute(
+            text("UPDATE ingestion_jobs SET status = 'failed', error_message = :error, finished_at = now() WHERE id = :id"),
+            {"id": job_id, "error": "queue unavailable"},
+        )
+        await session.commit()
+        raise HTTPException(status_code=503, detail="ingestion queue unavailable") from exc
+    await record_event(
+        session,
+        auth,
+        http_request.state.request_id,
+        "ingestion.queued",
+        {"job_id": str(job_id), "source": request.source},
+    )
+    return IngestionJobResponse(job_id=str(job_id), status="queued")
+
+
+@router.get("/ingestion/jobs/{job_id}", response_model=IngestionJobStatusResponse)
+async def get_ingestion_job_status(
+    job_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    session: AsyncSession = Depends(get_session),
+    _: None = Depends(enforce_rate_limit),
+) -> IngestionJobStatusResponse:
+    job = await get_ingestion_job(session, job_id, auth.tenant_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="ingestion job not found")
+    row = (
+        await session.execute(
+            text("SELECT documents_processed FROM ingestion_jobs WHERE id = :id"),
+            {"id": job_id},
+        )
+    ).mappings().one()
+    return IngestionJobStatusResponse(
+        job_id=str(job.job_id),
+        status=job.status,
+        documents_processed=row["documents_processed"],
+        attempt_count=job.attempt_count,
+        max_attempts=job.max_attempts,
+        error_message=job.error_message,
     )
 
 
