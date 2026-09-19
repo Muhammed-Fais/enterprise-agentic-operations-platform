@@ -216,7 +216,7 @@ The retrieval node returns an empty evidence list when nothing authorized is rel
 
 ### Why use Ollama and a local model here?
 
-The project is designed to be free to run locally, so the answer-generation path uses Ollama rather than a paid hosted API. The model is injected behind a small adapter, which lets us measure the workflow independently from the model provider. The important safety boundary remains retrieval authorization and abstention; the local model is never allowed to invent evidence.
+The project is designed to be free to run locally, so the answer-generation path uses Ollama rather than a paid hosted API. This environment uses `llama3:latest`, injected behind a small adapter so the workflow can be measured independently from the model provider. The important safety boundary remains retrieval authorization and abstention; the local model is never allowed to invent evidence.
 
 ### How do you prevent the model from answering from unsupported context?
 

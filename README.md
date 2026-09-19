@@ -113,7 +113,7 @@ The MCP demo server can be run with:
 
 Tool authorization is enforced in the application layer, including role checks, hashed expiring approval records, exact-argument binding, durable PostgreSQL idempotency, and failure state. MCP tool annotations are treated as metadata, not as a security boundary. The in-memory authorization class is retained only for isolated unit tests; the API uses the persistent implementation.
 
-The agent answer path uses local Ollama through `OLLAMA_MODEL` and defaults to `qwen3.5:9b`. The graph abstains before calling the model when no authorized evidence is retrieved.
+The agent answer path uses local Ollama through `OLLAMA_MODEL` and defaults to `llama3:latest` in this environment. The graph abstains before calling the model when no authorized evidence is retrieved.
 
 Protected API routes use Redis-backed per-tenant/user rate limits and daily agent workflow budgets. Configure `RATE_LIMIT_REQUESTS_PER_MINUTE` and `AGENT_BUDGET_UNITS_PER_DAY` in `.env`; Redis control failures fail closed with `503`.
 

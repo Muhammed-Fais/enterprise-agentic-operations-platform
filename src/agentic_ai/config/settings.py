@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     jwt_issuer: str | None = None
     jwt_audience: str | None = None
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "qwen3.5:9b"
+    ollama_model: str = "llama3:latest"
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_base_url: str = "http://localhost:3000"
