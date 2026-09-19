@@ -307,3 +307,10 @@ For most questions, answer in this order:
 ### What is still incomplete in this project?
 
 The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing beyond Langfuse, asynchronous workers, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+### Why separate liveness and readiness endpoints?
+
+`/health` is intentionally cheap and does not depend on external services, so a process supervisor can distinguish “the process is alive” from dependency failures. `/ready` checks PostgreSQL and Redis and returns HTTP 503 until both are available. This prevents a load balancer or Kubernetes service from sending traffic to an instance that has started but cannot serve protected requests. The Compose healthcheck uses `/ready`, while liveness monitoring uses `/health`.
+
+### How does the containerized deployment handle database initialization?
+
+The Compose `migrate` job runs the versioned SQL migrations after PostgreSQL passes its healthcheck. The API depends on that job completing successfully, so startup ordering is explicit rather than relying on a sleep or an application-side race. Migrations use `IF NOT EXISTS` guards for the current schema and are safe to rerun; a production migration framework would add an immutable migration ledger before introducing non-idempotent changes.

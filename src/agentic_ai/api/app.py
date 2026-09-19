@@ -1,6 +1,11 @@
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+import redis.asyncio as redis
+from fastapi import FastAPI, HTTPException, Request, status
+from sqlalchemy import text
+
+from agentic_ai.config import get_settings
+from agentic_ai.db.session import engine
 
 from .routes import router
 
@@ -20,3 +25,34 @@ async def request_id_middleware(request: Request, call_next):
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/ready")
+async def readiness() -> dict[str, object]:
+    """Report whether dependencies required to serve traffic are available."""
+    checks: dict[str, str] = {}
+    try:
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
+        checks["postgres"] = "ok"
+    except Exception as exc:
+        checks["postgres"] = "unavailable"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "not_ready", "checks": checks},
+        ) from exc
+
+    client = redis.from_url(get_settings().redis_url)
+    try:
+        await client.ping()
+        checks["redis"] = "ok"
+    except Exception as exc:
+        checks["redis"] = "unavailable"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "not_ready", "checks": checks},
+        ) from exc
+    finally:
+        await client.aclose()
+
+    return {"status": "ready", "checks": checks}

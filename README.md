@@ -49,6 +49,14 @@ Run the local infrastructure with Docker Desktop:
 docker compose up -d postgres redis
 ```
 
+To run the complete containerized API stack, including an idempotent migration job:
+
+```bash
+docker compose --profile app up --build
+```
+
+`/health` is a liveness check. `/ready` verifies PostgreSQL and Redis before the API is marked ready, which allows an orchestrator to keep traffic away during dependency outages or startup.
+
 See [production interview questions and answers](docs/interview-questions.md) for the reasoning behind the retrieval, security, agent, MCP, and operations design.
 
 See [observability.md](docs/observability.md) for the Langfuse tracing setup. Langfuse is optional and content capture is disabled by default; PostgreSQL remains the durable audit source for security and business events.
