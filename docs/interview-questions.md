@@ -34,6 +34,10 @@ The agent should abstain or ask a clarifying question. It must not invent an ans
 
 We maintain questions with expected documents or chunks and measure Recall@K, MRR, NDCG, ACL correctness, latency, and citation completeness. Retrieval evaluation is separate from answer-generation evaluation so a generation model cannot hide a retrieval regression.
 
+### How does the evaluation gate work in CI?
+
+The retriever adapter emits one JSONL prediction per versioned case. A deterministic evaluator calculates Recall@K, Precision@K, MRR, NDCG, forbidden-retrieval rate, and p95 latency. CI fails when configured thresholds are missed, especially when unauthorized chunks appear. The report is uploaded as an artifact so a failed pull request has measurable evidence rather than only a pass/fail signal.
+
 ## Agent and MCP design
 
 ### Why use an agent instead of a single RAG chain?

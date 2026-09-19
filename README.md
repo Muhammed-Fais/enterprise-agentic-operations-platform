@@ -63,6 +63,20 @@ See [observability.md](docs/observability.md) for the Langfuse tracing setup. La
 
 The first versioned retrieval cases live in [retrieval_cases.jsonl](data/evaluation/retrieval_cases.jsonl), with metric calculations in `agentic_ai.evaluation`. Evaluation cases are treated as code: changes should be reviewed and run in CI.
 
+Run the deterministic retrieval quality gate locally:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m agentic_ai.evaluation.cli \
+  --cases data/evaluation/retrieval_cases.jsonl \
+  --predictions data/evaluation/retrieval_smoke_predictions.jsonl \
+  --output retrieval-evaluation.json \
+  --min-recall-at-k 1.0 \
+  --max-forbidden-retrieval-rate 0.0 \
+  --max-p95-latency-ms 100
+```
+
+Production retriever adapters should write the same prediction format. CI treats missing evidence, unauthorized chunks, and latency regressions as quality-gate failures and stores the JSON report as an artifact.
+
 The API can be started with:
 
 ```bash
