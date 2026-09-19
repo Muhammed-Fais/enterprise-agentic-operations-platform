@@ -87,6 +87,8 @@ PYTHONPATH=src .venv/bin/python -m agentic_ai.evaluation.security_cli \
 
 The security suite covers PII masking, prompt-injection detection, cross-tenant retrieval leakage, role-based tool authorization, and approval enforcement. It is a baseline control suite; production deployments should add tenant-specific adversarial cases and external DLP/identity-provider tests.
 
+Local development uses an HMAC JWT secret. For an identity-provider deployment, set `JWT_JWKS_URL`, `JWT_ISSUER`, `JWT_AUDIENCE`, and an asymmetric `JWT_ALGORITHM` such as `RS256`; the API resolves signing keys by token `kid`, caches the JWKS briefly, and validates issuer/audience claims. PostgreSQL RLS is enabled and forced on tenant-owned tables, with the authenticated tenant written into a transaction-local database setting before application queries run.
+
 The API can be started with:
 
 ```bash

@@ -4,20 +4,23 @@ from uuid import UUID
 
 from agentic_ai.api.dependencies import get_redis
 from agentic_ai.config import get_settings
-from agentic_ai.db.session import session_factory
+from agentic_ai.db.session import session_factory, set_tenant_context
 from agentic_ai.embeddings import LocalSentenceTransformerEmbedder
 from agentic_ai.ingestion import IngestionQueue, IngestionService
 from agentic_ai.ingestion.jobs import (
-    get_ingestion_job_by_id,
+    get_ingestion_job,
     mark_job_completed,
     mark_job_failed,
     mark_job_running,
 )
 
 
-async def process_job(job_id: UUID, embedder: LocalSentenceTransformerEmbedder) -> bool:
+async def process_job(
+    job_id: UUID, tenant_id: str, embedder: LocalSentenceTransformerEmbedder
+) -> bool:
     async with session_factory() as session:
-        job = await get_ingestion_job_by_id(session, job_id)
+        await set_tenant_context(session, tenant_id)
+        job = await get_ingestion_job(session, job_id, tenant_id)
         if job is None:
             return True
         if not await mark_job_running(session, job_id):
@@ -48,12 +51,17 @@ async def run_worker() -> None:
             if not raw_job_id:
                 await queue.ack(message_id)
                 continue
+            raw_tenant_id = fields.get(b"tenant_id") or fields.get("tenant_id")
+            if not raw_tenant_id:
+                await queue.ack(message_id)
+                continue
             job_id = UUID(raw_job_id.decode() if isinstance(raw_job_id, bytes) else raw_job_id)
-            terminal = await process_job(job_id, embedder)
+            tenant_id = raw_tenant_id.decode() if isinstance(raw_tenant_id, bytes) else raw_tenant_id
+            terminal = await process_job(job_id, tenant_id, embedder)
             if terminal:
                 await queue.ack(message_id)
             else:
-                await queue.enqueue(job_id)
+                await queue.enqueue(job_id, tenant_id)
                 await queue.ack(message_id)
 
 

@@ -28,3 +28,26 @@ def test_auth_context_rejects_missing_token() -> None:
         get_auth_context(None)
 
     assert error.value.status_code == 401
+
+
+def test_auth_context_validates_issuer_and_audience(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JWT_SECRET", "test-secret-with-at-least-32-bytes-long")
+    monkeypatch.setenv("JWT_ISSUER", "https://issuer.example")
+    monkeypatch.setenv("JWT_AUDIENCE", "agentic-api")
+    get_settings.cache_clear()
+    token = jwt.encode(
+        {
+            "sub": "user-1",
+            "tenant_id": "tenant-a",
+            "roles": ["analyst"],
+            "iss": "https://issuer.example",
+            "aud": "agentic-api",
+        },
+        "test-secret-with-at-least-32-bytes-long",
+        algorithm="HS256",
+    )
+
+    context = get_auth_context(f"Bearer {token}")
+
+    assert context.tenant_id == "tenant-a"
+    get_settings.cache_clear()

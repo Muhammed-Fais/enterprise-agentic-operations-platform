@@ -23,8 +23,11 @@ class IngestionQueue:
             if "BUSYGROUP" not in str(exc):
                 raise
 
-    async def enqueue(self, job_id: UUID | str) -> str:
-        return await self.redis.xadd(self.stream, {"job_id": str(job_id)})
+    async def enqueue(self, job_id: UUID | str, tenant_id: str) -> str:
+        return await self.redis.xadd(
+            self.stream,
+            {"job_id": str(job_id), "tenant_id": tenant_id},
+        )
 
     async def read(self, consumer: str, *, block_ms: int = 5000) -> list[tuple[str, dict[bytes, bytes]]]:
         await self.ensure_group()

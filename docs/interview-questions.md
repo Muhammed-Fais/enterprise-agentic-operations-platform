@@ -72,6 +72,10 @@ The API should expose typed request and response contracts, validate tenant and 
 
 It must come from a validated authentication token, not from the request body. The current API validates a signed JWT and derives `tenant_id`, `sub`, and `roles` from its claims. Those values are passed into retrieval and ingestion. A production deployment would use an external identity provider and rotate signing keys instead of the development HMAC secret.
 
+### How does JWT key rotation work?
+
+Local development uses HS256 with a development secret. The production path supports a JWKS URL and an asymmetric algorithm such as RS256. The token `kid` selects the signing key, PyJWT caches the JWKS for a short period, and issuer/audience validation is enabled when configured. Rotation is handled by publishing a new key in JWKS while old keys remain available until all issued tokens expire; the API never accepts an algorithm outside its explicit configuration.
+
 ### How does PII masking work?
 
 The guardrail scans content and queries for patterns such as email addresses, phone numbers, SSNs, and API-key-like values before embedding or persistence. It replaces them with typed placeholders and records only masking metadata. The current implementation is intentionally conservative and should be extended with a tested recognizer such as an enterprise DLP service for broader coverage.
@@ -148,7 +152,7 @@ Documents are identified by `tenant_id` and `external_id`, while a content hash 
 
 ### How do you handle tenant isolation?
 
-Tenant isolation must exist at every layer: authentication claims, API context, SQL filters, retrieval, MCP tools, cache keys, memory, logs, and background jobs. Cache keys must include tenant identity so one tenant cannot receive another tenant's cached answer. PostgreSQL Row-Level Security can add a second enforcement layer in a larger deployment.
+Tenant isolation must exist at every layer: authentication claims, API context, SQL filters, retrieval, MCP tools, cache keys, memory, logs, and background jobs. Cache keys and queue messages include tenant identity so one tenant cannot receive another tenant's cached answer or run a job without context. PostgreSQL Row-Level Security is enabled and forced on tenant-owned tables as a second enforcement layer; the application sets a transaction-local tenant context before queries.
 
 ### How do you version prompts, embeddings, and datasets?
 
@@ -273,7 +277,7 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 - Production SSO/IdP integration and key rotation
 - Deployment promotion and runtime secret-manager integration
 - OpenTelemetry export beyond Langfuse
-- PostgreSQL Row-Level Security as a second tenant-isolation layer
+- Full production SSO/IdP integration, key rotation operations, and secret-manager integration
 
 ### Recently added
 

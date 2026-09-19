@@ -151,7 +151,7 @@ async def submit_ingestion_job(
         max_attempts=get_settings().ingestion_max_attempts,
     )
     try:
-        await queue.enqueue(job_id)
+        await queue.enqueue(job_id, auth.tenant_id)
     except Exception as exc:
         await session.execute(
             text("UPDATE ingestion_jobs SET status = 'failed', error_message = :error, finished_at = now() WHERE id = :id"),

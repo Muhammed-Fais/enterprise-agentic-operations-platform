@@ -31,9 +31,11 @@ async def test_ingestion_queue_creates_group_and_enqueues_job() -> None:
     queue = IngestionQueue(redis)
     job_id = uuid4()
 
-    await queue.enqueue(job_id)
+    await queue.enqueue(job_id, "tenant-a")
 
     assert redis.created is False
     await queue.ensure_group()
     assert redis.created
-    assert redis.enqueued == [("agentic:ingestion:jobs", {"job_id": str(job_id)})]
+    assert redis.enqueued == [
+        ("agentic:ingestion:jobs", {"job_id": str(job_id), "tenant_id": "tenant-a"})
+    ]

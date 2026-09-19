@@ -53,6 +53,10 @@ services:
       DATABASE_URL: postgresql+psycopg://agentic:agentic@postgres:5432/agentic
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-development-only-change-me}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_JWKS_URL: ${JWT_JWKS_URL:-}
+      JWT_ISSUER: ${JWT_ISSUER:-}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-}
       INGESTION_MAX_ATTEMPTS: ${INGESTION_MAX_ATTEMPTS:-3}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
