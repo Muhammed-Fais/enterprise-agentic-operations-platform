@@ -226,6 +226,10 @@ Each tool has a timeout, bounded retry policy, circuit breaker, correlation ID, 
 
 Retrieved documents are untrusted evidence, not instructions. They are delimited and inspected, while system and workflow instructions remain authoritative. Tool access is enforced independently through schemas and authorization, so a malicious document cannot grant itself permission to call a tool or expose data.
 
+### How do you evaluate security controls?
+
+The security gate runs deterministic adversarial cases for PII leakage, prompt injection, forbidden cross-tenant retrieval, unauthorized roles, and missing write approvals. It fails closed when a sensitive value is returned, an injection pattern is missed, an ACL-protected chunk appears, or a tool call bypasses authorization. The JSON report is uploaded as a CI artifact, while higher-risk deployments should add tenant-specific fuzzing and external DLP/IdP verification.
+
 ### How do you evaluate the end-to-end agent?
 
 Evaluation is split into retrieval, generation, agent behavior, and security. We test source recall, citation validity, groundedness, answer correctness, tool selection, approval behavior, failure recovery, prompt injection, PII leakage, and cross-tenant access. Each run records model, prompt, retriever, embedding, and dataset versions.
@@ -261,7 +265,6 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 
 ### Not yet implemented
 
-- Prompt-injection guardrail service
 - Reranking model
 - OpenTelemetry or Langfuse tracing
 - Asynchronous ingestion workers
@@ -274,6 +277,8 @@ Each evaluation case can specify forbidden chunks or documents. The evaluator tr
 
 - Versioned retrieval evaluation cases
 - Recall@K, Precision@K, MRR, and forbidden-retrieval metrics
+- NDCG, p95 latency, and retrieval CI quality gates
+- Deterministic prompt-injection detection and security evaluation gates
 - Unit tests for evaluation behavior
 - Typed FastAPI document-ingestion and retrieval endpoints
 - JWT-derived tenant and subject context
@@ -310,7 +315,7 @@ For most questions, answer in this order:
 
 ### What is still incomplete in this project?
 
-The working vertical slice now includes JWT-derived identity, PII masking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, evaluation metrics, and automated tests. The remaining production hardening includes SSO/key rotation, prompt-injection testing, distributed tracing beyond Langfuse, asynchronous workers, CI/CD, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
+The working vertical slice now includes JWT-derived identity, PII masking, prompt-injection blocking, local embeddings, file ingestion, pgvector hybrid retrieval, ACL filtering, LangGraph orchestration, MCP stdio tools, Ollama generation, approval-gated writes, durable PostgreSQL idempotency, structured audit events, request correlation IDs, Langfuse traces, explicit degraded model responses, Redis rate limits and workflow budgets, retrieval and security evaluation gates, and automated tests. The remaining production hardening includes SSO/key rotation, distributed tracing beyond Langfuse, asynchronous workers, CI/CD deployment promotion, reranking, and a second tenant-isolation layer such as PostgreSQL RLS. Being explicit about that boundary is more credible than claiming unfinished enterprise integrations.
 ### Why separate liveness and readiness endpoints?
 
 `/health` is intentionally cheap and does not depend on external services, so a process supervisor can distinguish “the process is alive” from dependency failures. `/ready` checks PostgreSQL and Redis and returns HTTP 503 until both are available. This prevents a load balancer or Kubernetes service from sending traffic to an instance that has started but cannot serve protected requests. The Compose healthcheck uses `/ready`, while liveness monitoring uses `/health`.

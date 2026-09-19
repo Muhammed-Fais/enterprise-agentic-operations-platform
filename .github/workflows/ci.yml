@@ -76,6 +76,19 @@ jobs:
           name: retrieval-evaluation
           path: retrieval-evaluation.json
 
+      - name: Security evaluation gate
+        run: >-
+          python -m agentic_ai.evaluation.security_cli
+          --cases data/evaluation/security_cases.jsonl
+          --output security-evaluation.json
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-evaluation
+          path: security-evaluation.json
+
   container:
     runs-on: ubuntu-latest
     needs: quality

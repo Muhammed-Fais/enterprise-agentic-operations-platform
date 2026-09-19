@@ -12,7 +12,7 @@ from agentic_ai.controls import (
 )
 from agentic_ai.db.session import get_session
 from agentic_ai.embeddings import Embedder
-from agentic_ai.guardrails import mask_pii
+from agentic_ai.guardrails import detect_prompt_injection, mask_pii
 from agentic_ai.ingestion import IngestionService, LoadedDocument, chunk_text
 from agentic_ai.mcp import MCPStatusClient, PersistentToolAuthorization
 from agentic_ai.retrieval.contracts import AccessContext
@@ -161,6 +161,19 @@ async def run_agent(
         answer_model=answer_model.answer,
     )
     masked_query = mask_pii(request.query).text
+    injection = detect_prompt_injection(masked_query)
+    if injection.detected:
+        await record_event(
+            session,
+            auth,
+            http_request.state.request_id,
+            "security.prompt_injection_blocked",
+            {"matched_rules": list(injection.matched_rules)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="request blocked by prompt-injection guardrail",
+        )
     result = await observability.observe(
         name="agent.run",
         as_type="agent",

@@ -77,6 +77,16 @@ PYTHONPATH=src .venv/bin/python -m agentic_ai.evaluation.cli \
 
 Production retriever adapters should write the same prediction format. CI treats missing evidence, unauthorized chunks, and latency regressions as quality-gate failures and stores the JSON report as an artifact.
 
+Run the deterministic security gate locally:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m agentic_ai.evaluation.security_cli \
+  --cases data/evaluation/security_cases.jsonl \
+  --output security-evaluation.json
+```
+
+The security suite covers PII masking, prompt-injection detection, cross-tenant retrieval leakage, role-based tool authorization, and approval enforcement. It is a baseline control suite; production deployments should add tenant-specific adversarial cases and external DLP/identity-provider tests.
+
 The API can be started with:
 
 ```bash
